@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-fuchsia: #FF2E9A;
+  --electric-indigo: #5D00FF;
+  --cyber-lime: #CFFF04;
+  --graphite-black: #1C1C1C;
+  --blueprint-blue: #1B2E8C;
+  --blueprint-dark: #0F1B5C;
+  --paper-white: #FFFFFF;
+  --hitmap-glow: #FF2E9A;
+  --hitmap-fill: rgba(255, 46, 154, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  color: #1C1C1C;
+  background: var(--blueprint-blue);
+  font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+  overflow: hidden;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  touch-action: none;
+}
+
+/* Blueprint Denim / Paper Grid Texture */
+.blueprint-canvas {
+  background-color: #162473;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+}
+
+/* Y2K Thick Sticker Style */
+.y2k-sticker {
+  background: #FFFFFF;
+  border: 2.5px solid #1C1C1C;
+  border-radius: 16px;
+  box-shadow: 4px 4px 0px #1C1C1C;
+  color: #1C1C1C;
+}
+
+.y2k-sticker-fuchsia {
+  background: #FF2E9A;
+  border: 2.5px solid #1C1C1C;
+  border-radius: 16px;
+  box-shadow: 4px 4px 0px #1C1C1C;
+  color: #FFFFFF;
+}
+
+.y2k-sticker-lime {
+  background: #CFFF04;
+  border: 2.5px solid #1C1C1C;
+  border-radius: 16px;
+  box-shadow: 4px 4px 0px #1C1C1C;
+  color: #1C1C1C;
+}
+
+.y2k-sticker-indigo {
+  background: #5D00FF;
+  border: 2.5px solid #1C1C1C;
+  border-radius: 16px;
+  box-shadow: 4px 4px 0px #1C1C1C;
+  color: #FFFFFF;
+}
+
+.y2k-btn-bounce {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.y2k-btn-bounce:hover {
+  transform: translate(-1.5px, -1.5px);
+  box-shadow: 5.5px 5.5px 0px #1C1C1C;
+}
+.y2k-btn-bounce:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #1C1C1C;
+}
+
+/* MapLibre Container Override */
+.maplibregl-map {
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #162473;
+}
+
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-top-right {
+  display: none !important;
+}
+
+/* Chalk / White Taped Label Effect */
+.taped-label {
+  background: #FFFFFF;
+  color: #1C1C1C;
+  border: 2px solid #1C1C1C;
+  box-shadow: 3px 3px 0px #1C1C1C;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+/* Hand-Drawn Pink Route Bubble */
+.pink-doodle-stroke {
+  stroke: #FF2E9A;
+  stroke-width: 8px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(255, 46, 154, 0.7));
+}

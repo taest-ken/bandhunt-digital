@@ -1,0 +1,213 @@
+================================================================================
+FRED'S INDIA TOUR BEFORE THE INDIA TOUR: THE HITMAP
+================================================================================
+CREATIVE CO-FOUNDER COLLABORATION & ASSET HANDOFF GUIDE
+Agency: taest.
+================================================================================
+
+Hey! 
+
+The web application is already fully built, running live, and interactive on 
+our end. You don't have to worry about any code, responsive scaling, or web 
+development technicalities—we handle all of that. 
+
+Since you have full creative command over the visual identity and experience, 
+this guide breaks down exactly what we need from you to turn our working engine 
+into your custom branded masterpiece!
+
+(Screenshots of our current screens with all UI elements will be shared with you 
+for visual reference so you can see where everything lives).
+
+
+================================================================================
+PART 1: THE GOLDEN CHEAT CODE — HOW TO MAKE ANY IMAGE WORK ON WEB
+================================================================================
+You don't need web design experience. Just keep these 3 simple rules in mind:
+
+1. USE TRANSPARENT PNGs (PNG-24):
+   - Whenever you export a sticker, compass needle, or character, turn off the 
+     background layer so it is transparent.
+   - This lets your artwork float cleanly on top of the live map!
+
+2. WORK ON A SQUARE CANVAS (1000 x 1000 pixels):
+   - In Procreate, Canva, or Photoshop, make a square canvas.
+   - Center your artwork with a little breathing room around the edges.
+
+3. POINT DIRECTIONAL ITEMS STRAIGHT "UP":
+   - For the compass needle/arrow or any character pointing, have it facing 
+     straight UP (12 o'clock / North) in its default state.
+   - Our code will automatically rotate your PNG in 360 degrees in real time to 
+     point towards Fred!
+
+
+================================================================================
+PART 2: THE VIBE, AESTHETICS & MAP ART DIRECTION
+================================================================================
+We are stepping completely away from the serious, pitch-black "military hacker" 
+aesthetic. We want this to feel fun, unserious, culturally chaotic, and energetic.
+
+To help us style all the background elements, buttons, and HUD to match your vision:
+
+[ ] 2.1. Vibe & Aesthetic Description:
+    - Write a short description of the vibe and attitude you want the site to have.
+    - Examples: Retro 90s arcade? Warm Indian street pop-art? Doodle sticker 
+      book? Chaotic meme energy? Colorful festival rave? 
+
+[ ] 2.2. Visual References & Moodboard:
+    - Please send a few reference images, screenshots, color palettes, or 
+      doodle styles that capture the mood you want.
+
+[ ] 2.3. Map Styling & Mood:
+    - Tell us how the city map itself should feel visually!
+    - Examples of map aesthetics we can configure:
+      * Warm vintage paper / explorer postcard map.
+      * Colorful retro 16-bit arcade pixel map.
+      * Vibrant high-contrast street map (warm terracotta, yellows, teal water).
+      * Minimalist clean pastel map.
+      * Illustrated doodle map.
+    - Feel free to scribble directly on our screen screenshots to show what you mean!
+
+
+================================================================================
+PART 3: THE COMPASS (HEAD & NEEDLE ASSETS)
+================================================================================
+The compass is the centerpiece of the sound game. When users touch and drag it 
+with their thumb, the head slides across the screen while the needle rotates in 
+360 degrees to point toward Fred's secret coordinate!
+
+To give it the best tactile feel, please provide **2 SEPARATE TRANSPARENT PNGs**:
+
+[ ] 3.1. File 1: The Compass Base / Head (compass_head.png):
+    - This is the puck or circular base that the user touches and drags around.
+    - It moves with the user's thumb, but stays right-side up (does not spin).
+    - Format: Square canvas (500x500 or 1000x1000 px), transparent .PNG.
+    - Ideas: A custom base ring, an auto-rickshaw meter base, a vinyl record, 
+      a chai saucer, or a colorful tactile joystick puck.
+
+[ ] 3.2. File 2: The Directional Needle / Arrow (compass_needle.png):
+    - This sits on top of the head and **spins dynamically in 360 degrees** in 
+      real time to point directly towards Fred!
+    - Format: Square canvas (500x500 or 1000x1000 px), transparent .PNG.
+    - IMPORTANT: Draw this pointing straight UP (12 o'clock / North) in its 
+      default position so our code can calculate the exact rotation angle!
+    - Ideas: A chunky doodle arrow, a cartoon Fred head with sunglasses looking 
+      forward, an auto-rickshaw facing forward, a finger pointing, or a sneaker.
+
+*(Note: If you prefer a single character that both moves and spins all at once, 
+you can send just 1 PNG facing straight UP, but having the Head and Needle as 2 
+separate files gives the slickest tactile video game feel!)*
+
+
+================================================================================
+PART 4: THE TOUR MASTER LIST (NODES & FRED PLAYLIST)
+================================================================================
+You have complete freedom over how many nodes are in the game! Whether you want 
+5 nodes, 10 nodes, or 25 nodes across Mumbai, Delhi, Bengaluru, etc.
+
+For EVERY node, we need:
+1. Hyper-Specific Node Title:
+   - Example: "Dadar Flower Market (Phool Galli)" or "Bandra Bandstand Rocks"
+2. Exact Real-World Location & Landmark:
+   - Street address, neighborhood name, or landmark (so we can lock in the 
+     geographic coordinates).
+3. The Clue / Lore Snippet:
+   - A witty, fun, or cryptic hint shown in the HUD.
+   - Example: "Subterranean marigold maze. Look for the vendor with the gold boombox."
+4. The Corresponding Fred Again.. Track (Audio Loop):
+   - Track title & artist.
+   - Audio file: A 30 to 60-second loop of the song's best hook/drop, edited 
+     with clean start and end points for smooth looping (.mp3 or .wav).
+5. The Reward Media (What pops up when unlocked):
+   - An edited photo, static digital illustration, meme graphic, or short video 
+     clip showing Fred doing something funny or iconic in that neighborhood!
+   - (Standard photo or video editing is completely fine—we can embed both static 
+     images and looping video clips).
+
+
+================================================================================
+PART 5: FULL CREATIVE FREEDOM FOR PHASE 2 & PHASE 3 LAYOUTS
+================================================================================
+You have 100% creative freedom to redesign how the pages look and behave during 
+Phase 2 (The Real-World Street Drop) and Phase 3 (The Waiting Room). 
+
+Tell us what you want to see, or mock it up! Here are some fun ideas:
+
+--------------------------------------------------------------------------------
+IDEAS FOR PHASE 2: "THE BANDHUNT IS LIVE NOW!" (Real-World Street Drop)
+--------------------------------------------------------------------------------
+* Live Street Lockdown / Airspace Hijack: Flashing hazard tape, emergency alert.
+* "WANTED" Bounty Posters: A comical Wild West style "Wanted: Fred Again" poster.
+* Fake CCTV Feeds or Walkie-Talkie Tapes: Ambient surveillance aesthetic.
+* Live Community Intel Ticker: Scrolling feed of "Last reported sightings".
+* Anti-Digital Prompt: Big bold text telling fans: "PUT YOUR PHONE IN YOUR POCKET 
+  AND GET OUT ONTO THE STREETS!"
+* Pass Counter: Real-time countdown of remaining wristbands in that neighborhood.
+
+--------------------------------------------------------------------------------
+IDEAS FOR PHASE 3: "THE WAITING ROOM" (Between-City Intermission)
+--------------------------------------------------------------------------------
+* Tour Bus Road-Trip Itinerary: Illustrated cartoon roadmap showing Fred's bus.
+* Interactive Scrapbook / Postcard: Polaroid-style photo board of previous city.
+* The Street Recap Video Reel: 30-45s edited montage cut to a Fred drop showing 
+  real crowd chaos from Phase 2!
+* Unreleased Audio Snippet Booth: Button allowing fans to preview a secret teaser.
+* Next City Radar Countdown: Bold retro countdown clock with radar beams.
+
+
+================================================================================
+PART 6: RECOMMENDED FOLDER STRUCTURE & FILE NAMING
+================================================================================
+To make dropping your assets into our codebase completely effortless, you can 
+package your files into this clean, organized folder structure:
+
+hitmap_assets/
+├── 01_vibe_and_references/
+│   ├── moodboard_references/        (images, doodles, screenshots, color palettes)
+│   ├── map_style_notes.txt          (notes on how the city map should look)
+│   └── general_notes.txt            (your vision for the vibe and copy)
+│
+├── 02_compass/
+│   ├── compass_head.png             (transparent PNG, the base joystick puck)
+│   └── compass_needle.png           (transparent PNG, facing straight UP)
+│
+├── 03_tour_nodes/
+│   ├── master_node_list.txt         (or .docx/.csv with titles, clues, and locations)
+│   ├── node_01/
+│   │   ├── reward_media.png         (or .jpg / .mp4 video loop)
+│   │   └── fred_track_loop.mp3      (30-60s edited audio loop)
+│   ├── node_02/
+│   │   ├── reward_media.png
+│   │   └── fred_track_loop.mp3
+│   ├── node_03/
+│   │   ├── reward_media.png
+│   │   └── fred_track_loop.mp3
+│   └── ... (one folder for each node you want to create!)
+│
+├── 04_phase2_street_drop/
+│   ├── wanted_poster.png            (optional / your custom graphic)
+│   ├── alert_badge.png              (optional)
+│   └── layout_mockup_or_notes.txt   (your ideas for the street alert screen)
+│
+├── 05_phase3_waiting_room/
+│   ├── street_recap_video.mp4       (or .mov, 30-45s edited offline montage)
+│   ├── postcard_or_roadmap.png      (optional)
+│   └── layout_mockup_or_notes.txt   (your ideas for the waiting room screen)
+│
+└── 06_stickers_and_doodles/
+    ├── sticker_star.png             (transparent PNGs)
+    ├── sticker_chai.png
+    ├── sticker_rickshaw.png
+    └── ... (any fun doodles or stamps we can scatter around!)
+
+
+================================================================================
+PART 7: FILE FORMAT SUMMARY
+================================================================================
+* Graphics / Stickers / Compass: Transparent .PNG files (PNG-24).
+* Node Rewards: .PNG, .JPG, or .MP4 video loops.
+* Audio Loops: .MP3 or .WAV (30-60s seamless edits).
+* Recap Video: .MP4 or .MOV (1080p vertical or landscape).
+
+Standard photo and video editing is completely welcome. We will ensure all files 
+render crisply, scale smoothly, and load instantly on every device!
+================================================================================
