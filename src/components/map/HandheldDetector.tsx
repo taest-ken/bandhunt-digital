@@ -178,7 +178,7 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
-        className={`relative w-[200px] h-[320px] sm:w-[220px] sm:h-[350px] cursor-grab active:cursor-grabbing transition-transform select-none ${
+        className={`relative w-[160px] h-[356px] sm:w-[176px] sm:h-[391px] cursor-grab active:cursor-grabbing transition-transform select-none ${
           isLockedIn
             ? "cursor-pointer animate-pulse"
             : isDragging
@@ -203,9 +203,9 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
           priority
         />
 
-        {/* 1. Directional Heading Beacon (Positioned directly above antenna tip) */}
+        {/* 1. Directional Heading Beacon (Positioned floating directly above antenna tip) */}
         <div
-          className="absolute top-[6.5%] left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-30 shadow-[1px_1px_0px_#1C1C1C] border border-[#FFE600]/40"
+          className="absolute -top-7 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-30 shadow-[1px_1px_0px_#1C1C1C] border border-[#FFE600]/40"
           title="Direction to target"
         >
           <Navigation
@@ -217,7 +217,7 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
         </div>
 
         {/* 2. GLOWING DOT & COLOR-CHANGING SONAR RADAR PULSE ON THE ANTENNA TIP */}
-        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-30">
+        <div className="absolute top-[4.7%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-30">
           {/* Concentric Expanding Pulsing Sonar Waves */}
           <div
             className="absolute w-12 h-12 rounded-full border-2 animate-ping opacity-60"
@@ -246,33 +246,33 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
           />
         </div>
 
-          {/* 3. Analog Gauge: Small Needle Centered in Screen Dial */}
-          <div className="absolute top-[31.5%] inset-x-0 mx-auto w-[110px] h-[55px] flex items-end justify-center pointer-events-none overflow-hidden z-20">
-            {/* Rotating Needle Arm */}
+        {/* 3. Analog Gauge: Needle Pivoting from Black Semicircle at Bottom of Screen Dial */}
+        <div className="absolute top-[52.1%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 flex items-center justify-center">
+          {/* Rotating Needle Arm */}
+          <div
+            className="absolute bottom-0 w-1 h-[36px] sm:h-[40px] origin-bottom transition-transform duration-75 ease-out"
+            style={{
+              transform: `rotate(${needleAngle}deg)`,
+            }}
+          >
+            {/* Needle shaft */}
             <div
-              className="relative w-1 h-[32px] sm:h-[35px] origin-bottom transition-transform duration-75 ease-out"
-              style={{
-                transform: `rotate(${needleAngle}deg)`,
-              }}
-            >
-              {/* Needle shaft */}
-              <div
-                className={`w-full h-full rounded-t-full transition-colors ${
-                  isLockedIn
-                    ? "bg-[#FF0040] shadow-[0_0_8px_#FF0040]"
-                    : proximity > 0.7
-                    ? "bg-[#FF8A00]"
-                    : "bg-[#1C1C1C]"
-                }`}
-              />
-              {/* Red tip */}
-              <div className="absolute top-0 inset-x-0 h-2 bg-[#FF0040] rounded-t-full" />
-            </div>
-
-            {/* Pivot cap at needle base */}
-            <div className="absolute -bottom-1 w-3.5 h-3.5 rounded-full bg-[#1C1C1C] border border-white z-30" />
+              className={`w-full h-full rounded-t-full transition-colors ${
+                isLockedIn
+                  ? "bg-[#FF0040] shadow-[0_0_8px_#FF0040]"
+                  : proximity > 0.7
+                  ? "bg-[#FF8A00]"
+                  : "bg-[#1C1C1C]"
+              }`}
+            />
+            {/* Red tip */}
+            <div className="absolute top-0 inset-x-0 h-2.5 bg-[#FF0040] rounded-t-full" />
           </div>
+
+          {/* Pivot cap seated directly on the printed black semicircle */}
+          <div className="w-3.5 h-3.5 rounded-full bg-[#1C1C1C] border border-[#FFE600]/60 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
         </div>
+      </div>
 
       {/* Floating Status & Directional Clue Bar Under the Device */}
       <div className="mt-2 flex flex-col items-center gap-1 pointer-events-none">

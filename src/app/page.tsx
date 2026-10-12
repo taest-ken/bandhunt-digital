@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Instagram, MessageCircle } from "lucide-react";
 import { TourScheduleResponse, RadarPingResponse, TourPhase } from "@/types/hitmap";
-import { getRandomMumbaiSpawn } from "@/lib/config/tourSchedule";
+import { getRandomMumbaiSpawn, TOUR_NODES } from "@/lib/config/tourSchedule";
 import { getProximityColorSpectrum } from "@/lib/colors/spectrum";
 import { getHitmapAudioEngine } from "@/lib/audio/audioGraph";
 import { LandingModal } from "@/components/landing/LandingModal";
@@ -30,6 +30,7 @@ export default function HitmapApp() {
 
   // Coordinates & Camera Velocity: Random initial spawn across Mumbai landmass!
   const [currentCoord, setCurrentCoord] = useState<[number, number]>(() => getRandomMumbaiSpawn());
+  const [resetCoord, setResetCoord] = useState<[number, number] | undefined>(undefined);
   const [velocity, setVelocity] = useState<{ vx: number; vy: number }>({ vx: 0, vy: 0 });
 
   // Radar Oracle State
@@ -144,8 +145,11 @@ export default function HitmapApp() {
 
   // 5. Hunt For The Node Again: resets spawn point safely away from node
   const handleHuntAgain = useCallback(() => {
-    const newSpawn = getRandomMumbaiSpawn(radar.nodeReward?.coordinates, 3.5);
+    const currentNode = TOUR_NODES[currentLevelIndex];
+    const targetCoord = currentNode?.coordinates || radar.nodeReward?.coordinates;
+    const newSpawn = getRandomMumbaiSpawn(targetCoord, 3.5);
     setCurrentCoord(newSpawn);
+    setResetCoord(newSpawn);
     setVelocity({ vx: 0, vy: 0 });
     setHasDismissedReward(false);
     setShowRewardModal(false);
@@ -155,9 +159,19 @@ export default function HitmapApp() {
       jitter: 14,
       zone: "COLD",
       verified: false,
+      nodeReward: undefined,
     });
-    pingRadarOracle(newSpawn);
-  }, [radar.nodeReward, pingRadarOracle]);
+    if (currentNode?.trackUrl && audioUnlocked) {
+      const engine = getHitmapAudioEngine();
+      engine.playNodeTrack(
+        currentNode.trackUrl,
+        currentNode.audioLoopStart ?? 0,
+        currentNode.audioLoopEnd
+      );
+      engine.updateProximity(0.05);
+    }
+    pingRadarOracle(newSpawn, currentLevelIndex);
+  }, [currentLevelIndex, radar.nodeReward, audioUnlocked, pingRadarOracle]);
 
   // 6. Advance to Next Level (1 -> 2 -> ... -> 6)
   const handleNextLevel = useCallback(() => {
@@ -167,8 +181,10 @@ export default function HitmapApp() {
     setShowRewardModal(false);
     setHasDismissedReward(false);
 
-    const newSpawn = getRandomMumbaiSpawn(undefined, 3.5);
+    const nextNode = TOUR_NODES[nextIdx];
+    const newSpawn = getRandomMumbaiSpawn(nextNode?.coordinates, 3.5);
     setCurrentCoord(newSpawn);
+    setResetCoord(newSpawn);
     setVelocity({ vx: 0, vy: 0 });
     setRadar({
       proximity: 0.05,
@@ -176,10 +192,22 @@ export default function HitmapApp() {
       jitter: 14,
       zone: "COLD",
       verified: false,
+      nodeReward: undefined,
     });
+
+    if (nextNode?.trackUrl && audioUnlocked) {
+      const engine = getHitmapAudioEngine();
+      engine.playNodeTrack(
+        nextNode.trackUrl,
+        nextNode.audioLoopStart ?? 0,
+        nextNode.audioLoopEnd
+      );
+      engine.updateProximity(0.05);
+    }
+
     fetchSchedule(activePhase, nextIdx);
     pingRadarOracle(newSpawn, nextIdx);
-  }, [currentLevelIndex, activePhase, fetchSchedule, pingRadarOracle]);
+  }, [currentLevelIndex, activePhase, audioUnlocked, fetchSchedule, pingRadarOracle]);
 
   const isAllCompleted = completedLevels.length >= 6 || (currentLevelIndex === 5 && radar.verified);
 
@@ -227,6 +255,7 @@ export default function HitmapApp() {
       {/* 3. Base Map Canvas (Carto Positron: Sky Blue buildings, Pure White background & roads) */}
       <MapCanvas
         initialCenter={currentCoord}
+        resetCoord={resetCoord}
         velocity={velocity}
         onCenterChange={handleCenterChange}
         isLockedIn={radar.verified}

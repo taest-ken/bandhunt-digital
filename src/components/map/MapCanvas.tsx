@@ -8,6 +8,7 @@ import { Plus, Minus } from "lucide-react";
 
 interface MapCanvasProps {
   initialCenter: [number, number]; // [lng, lat]
+  resetCoord?: [number, number];
   velocity: { vx: number; vy: number }; // from joystick
   onCenterChange: (center: [number, number]) => void;
   isLockedIn: boolean;
@@ -58,6 +59,7 @@ const BANGALORE_ROUTE_COORDS: [number, number][] = [
 
 export const MapCanvas: React.FC<MapCanvasProps> = ({
   initialCenter,
+  resetCoord,
   velocity,
   onCenterChange,
   isLockedIn,
@@ -73,6 +75,19 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   const lastTimeRef = useRef<number>(performance.now());
   const throttleTimerRef = useRef<number>(0);
   const currentPhaseRef = useRef<TourPhase>(activePhase);
+
+  // Camera repositioning when resetCoord changes (e.g. Next Level or Hunt Again)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !resetCoord) return;
+    map.flyTo({
+      center: resetCoord,
+      zoom: 14.5,
+      speed: 1.8,
+      curve: 1.42,
+      essential: true,
+    });
+  }, [resetCoord]);
 
   // Apply Blueprint Map Styles:
   // - Plain area / Landmass: Bright Electric Blue (#1A56DB / #0052FF)
