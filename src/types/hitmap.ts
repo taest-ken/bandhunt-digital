@@ -16,6 +16,8 @@ export interface TourNode {
   trackTitle: string;
   trackArtist: string;
   trackUrl: string;
+  audioLoopStart?: number;
+  audioLoopEnd?: number;
   timecodes: string;
   imageUrl: string; // /assets/nodes/spotX_...jpg
   videoLoopUrl?: string;
@@ -35,6 +37,10 @@ export interface TourScheduleResponse {
     clueText: string;
     trackTitle: string;
     trackArtist: string;
+    trackUrl?: string;
+    videoLoopUrl?: string;
+    audioLoopStart?: number;
+    audioLoopEnd?: number;
     timecodes: string;
     discoveryQuote?: string;
     targetName?: string;

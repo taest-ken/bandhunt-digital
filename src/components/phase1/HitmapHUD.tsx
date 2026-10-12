@@ -82,7 +82,7 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
             />
             <div className="h-4 w-[1.5px] bg-[#1C1C1C]/20" />
             <span className="text-[11px] sm:text-xs font-mono font-black uppercase text-[#5D00FF]">
-              Level #{nodeIndex + 1}
+              Level {nodeIndex}
             </span>
             <div className="h-4 w-[1.5px] bg-[#1C1C1C]/20" />
             <span className="relative flex h-2.5 w-2.5" title="Live hunt active">
@@ -204,32 +204,6 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
               </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* 3. Bottom Left Social Link Hook */}
-      <div className="fixed bottom-3 right-3 sm:right-auto sm:left-[320px] z-30 pointer-events-auto">
-        <div className="flex items-center gap-2 bg-white border-2 border-[#1C1C1C] px-3 py-1 rounded-xl shadow-[3px_3px_0px_#1C1C1C] text-[10px] font-sans font-black">
-          <span className="text-gray-500 uppercase">follow taest.club:</span>
-          <a
-            href="https://instagram.com/taest.club"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#FF2E9A] hover:underline flex items-center gap-0.5"
-          >
-            <span>IG</span>
-            <ExternalLink className="w-2.5 h-2.5" />
-          </a>
-          <span className="text-gray-300">/</span>
-          <a
-            href="https://chat.whatsapp.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#25D366] hover:underline flex items-center gap-0.5"
-          >
-            <span>WA</span>
-            <ExternalLink className="w-2.5 h-2.5" />
-          </a>
         </div>
       </div>
     </header>

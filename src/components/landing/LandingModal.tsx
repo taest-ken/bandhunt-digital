@@ -56,6 +56,39 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
             </div>
           </div>
         </div>
+
+        {/* Sticker 1: Handheld Detector - Top-Right */}
+        <div className="absolute -top-14 -right-10 sm:-top-16 sm:-right-12 w-28 sm:w-36 h-36 sm:h-44 pointer-events-none rotate-[14deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
+          <Image
+            src="/assets/detector/body.png"
+            alt="Handheld Detector"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+
+        {/* Sticker 2: Halftone Headphones - Bottom-Left */}
+        <div className="absolute -bottom-10 -left-10 sm:-bottom-12 sm:-left-12 w-32 sm:w-40 h-32 sm:h-40 pointer-events-none rotate-[-8deg] drop-shadow-[5px_5px_0px_#1C1C1C] z-30">
+          <Image
+            src="/assets/stickers/headphones.png"
+            alt="Headphones"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+
+        {/* Sticker 3: Pink Pixel Ticket - Bottom-Right */}
+        <div className="absolute -bottom-6 -right-8 sm:-bottom-8 sm:-right-10 w-28 sm:w-36 h-28 sm:h-36 pointer-events-none rotate-[6deg] drop-shadow-[5px_5px_0px_#1C1C1C] z-30">
+          <Image
+            src="/assets/stickers/tickets.png"
+            alt="Ticket"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
       </div>
     </div>
   );

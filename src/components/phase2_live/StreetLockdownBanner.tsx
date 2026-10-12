@@ -9,8 +9,8 @@ export const StreetLockdownBanner: React.FC = () => {
       {/* Top Playful Comic Hazard Bar */}
       <div className="w-full h-2.5 bg-[#FF2E9A] border-b-2 border-[#1C1C1C]" />
 
-      {/* Main Alert Banner - Center Aligned */}
-      <div className="w-full max-w-4xl mx-auto bg-white p-3.5 sm:p-4 mt-2 flex flex-col items-center justify-center text-center gap-2.5 shadow-[6px_6px_0px_#1C1C1C] border-[3.5px] border-[#1C1C1C] rounded-2xl">
+      {/* Main Alert Banner - Form-fitted to content without excess whitespace */}
+      <div className="w-fit max-w-xl mx-auto bg-white px-6 py-3.5 sm:px-8 sm:py-4 mt-2 flex flex-col items-center justify-center text-center gap-2 shadow-[6px_6px_0px_#1C1C1C] border-[3.5px] border-[#1C1C1C] rounded-2xl">
         <BrandCollabLogo size="md" />
 
         <div className="flex flex-col items-center gap-1">

@@ -93,6 +93,16 @@ export default function HitmapApp() {
     }
   }, [activePhase]);
 
+  // 2b. Play official node track whenever audio is unlocked or level changes
+  useEffect(() => {
+    if (!audioUnlocked || !schedule?.currentNode) return;
+    const engine = getHitmapAudioEngine();
+    const node = schedule.currentNode;
+    if (node.trackUrl) {
+      engine.playNodeTrack(node.trackUrl, node.audioLoopStart ?? 0, node.audioLoopEnd);
+    }
+  }, [audioUnlocked, schedule?.currentNode?.id]);
+
   // 3. Distance & Bearing Oracle Ping
   const pingRadarOracle = useCallback(
     async (coord: [number, number], levelIdx?: number) => {
@@ -191,6 +201,13 @@ export default function HitmapApp() {
     try {
       const engine = getHitmapAudioEngine();
       await engine.unlockAudio();
+      if (schedule?.currentNode?.trackUrl) {
+        engine.playNodeTrack(
+          schedule.currentNode.trackUrl,
+          schedule.currentNode.audioLoopStart ?? 0,
+          schedule.currentNode.audioLoopEnd
+        );
+      }
     } catch (e) {
       console.warn("Audio resume requires user gesture:", e);
     }
@@ -320,6 +337,7 @@ export default function HitmapApp() {
           clueText={radar.nodeReward.clueText}
           storyTitle={radar.nodeReward.storyTitle}
           imageUrl={radar.nodeReward.imageUrl}
+          videoLoopUrl={radar.nodeReward.videoLoopUrl || schedule.currentNode.videoLoopUrl}
           isFinalNode={radar.nodeReward.isFinalNode}
           timeRemainingMs={schedule.timeRemainingInNodeMs}
           onClose={() => {
@@ -349,8 +367,30 @@ export default function HitmapApp() {
         />
       )}
 
-      {/* 7. Demo Phase Switcher (Y2K Comic Aesthetic) */}
-      <aside className="fixed bottom-3 left-3 z-40 flex items-center gap-1.5 bg-white border-2 border-[#1C1C1C] px-3 py-1.5 rounded-xl shadow-[3px_3px_0px_#1C1C1C] text-[10px] font-sans font-black pointer-events-auto">
+      {/* 7. Persistent Bottom Follow Bar on the LEFT: taest.club IG & WA Channel across all phases */}
+      <div className="fixed bottom-3 left-3 sm:left-4 z-40 flex items-center gap-2 pointer-events-auto">
+        <a
+          href="https://instagram.com/taest.club"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="py-1.5 px-3 rounded-xl bg-white hover:bg-gray-50 border-2 border-[#1C1C1C] shadow-[2.5px_2.5px_0px_#1C1C1C] text-[10px] font-sans font-black uppercase text-[#1C1C1C] flex items-center gap-1.5 transition-all cursor-pointer"
+        >
+          <Instagram className="w-3.5 h-3.5 text-[#E1306C]" />
+          <span>Follow IG</span>
+        </a>
+        <a
+          href="https://whatsapp.com/channel/0029Va9y6XU0VycF8v8R6D1O"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="py-1.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] border-2 border-[#1C1C1C] shadow-[2.5px_2.5px_0px_#1C1C1C] text-[10px] font-sans font-black uppercase text-white flex items-center gap-1.5 transition-all cursor-pointer"
+        >
+          <MessageCircle className="w-3.5 h-3.5" />
+          <span>Join WA</span>
+        </a>
+      </div>
+
+      {/* 8. Demo Phase Switcher on the RIGHT (Y2K Comic Aesthetic) */}
+      <aside className="fixed bottom-3 right-3 sm:right-4 z-40 flex items-center gap-1.5 bg-white border-2 border-[#1C1C1C] px-3 py-1.5 rounded-xl shadow-[3px_3px_0px_#1C1C1C] text-[10px] font-sans font-black pointer-events-auto">
         <span className="text-gray-500 uppercase tracking-wider mr-1">
           DEMO PHASES:
         </span>
@@ -385,28 +425,6 @@ export default function HitmapApp() {
           PH3 (ROAD TRIP)
         </button>
       </aside>
-
-      {/* 8. Persistent Bottom Follow Bar: taest.club IG & WA Channel across all phases */}
-      <div className="fixed bottom-3 right-3 sm:right-6 z-40 flex items-center gap-2 pointer-events-auto">
-        <a
-          href="https://instagram.com/taest.club"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="py-1.5 px-3 rounded-xl bg-white hover:bg-gray-50 border-2 border-[#1C1C1C] shadow-[2.5px_2.5px_0px_#1C1C1C] text-[10px] font-sans font-black uppercase text-[#1C1C1C] flex items-center gap-1.5 transition-all cursor-pointer"
-        >
-          <Instagram className="w-3.5 h-3.5 text-[#E1306C]" />
-          <span>Follow IG</span>
-        </a>
-        <a
-          href="https://whatsapp.com/channel/0029Va9y6XU0VycF8v8R6D1O"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="py-1.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] border-2 border-[#1C1C1C] shadow-[2.5px_2.5px_0px_#1C1C1C] text-[10px] font-sans font-black uppercase text-white flex items-center gap-1.5 transition-all cursor-pointer"
-        >
-          <MessageCircle className="w-3.5 h-3.5" />
-          <span>Join WA</span>
-        </a>
-      </div>
     </main>
   );
 }

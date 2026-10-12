@@ -22,6 +22,7 @@ import {
   Ticket,
 } from "lucide-react";
 import { BrandCollabLogo } from "@/components/ui/BrandCollabLogo";
+import { getHitmapAudioEngine } from "@/lib/audio/audioGraph";
 
 interface RewardModalProps {
   spotNumber?: number;
@@ -31,6 +32,7 @@ interface RewardModalProps {
   clueText?: string;
   storyTitle?: string;
   imageUrl?: string;
+  videoLoopUrl?: string;
   isFinalNode?: boolean;
   timeRemainingMs: number;
   onClose: () => void;
@@ -47,6 +49,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   clueText,
   storyTitle,
   imageUrl,
+  videoLoopUrl,
   isFinalNode = false,
   timeRemainingMs,
   onClose,
@@ -54,8 +57,19 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   onHuntAgain,
   onOpenRSVP,
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [secondsLeft, setSecondsLeft] = useState(59);
+
+  // Duck background audio while reward video is playing
+  useEffect(() => {
+    try {
+      getHitmapAudioEngine().duckAudio(true);
+    } catch {}
+    return () => {
+      try {
+        getHitmapAudioEngine().duckAudio(false);
+      } catch {}
+    };
+  }, []);
 
   // Individual 59-second countdown when modal is viewed
   useEffect(() => {
@@ -72,32 +86,27 @@ export const RewardModal: React.FC<RewardModalProps> = ({
     return () => clearInterval(interval);
   }, [spotNumber]);
 
-  // Fallback image map
-  const defaultImageMap: Record<number, string> = {
-    74: "/assets/nodes/spot1_andheri.jpg",
-    118: "/assets/nodes/spot2_dadar.jpg",
-    162: "/assets/nodes/spot3_paagal_pan.jpg",
-    89: "/assets/nodes/spot4_chor_bazaar.jpg",
-    147: "/assets/nodes/spot5_marine_drive.jpg",
-    195: "/assets/nodes/spot6_asiatic_library.jpg",
-    1: "/assets/nodes/spot1_andheri.jpg",
-    2: "/assets/nodes/spot2_dadar.jpg",
-    3: "/assets/nodes/spot3_paagal_pan.jpg",
-    4: "/assets/nodes/spot4_chor_bazaar.jpg",
-    5: "/assets/nodes/spot5_marine_drive.jpg",
-    6: "/assets/nodes/spot6_asiatic_library.jpg",
+  // Official direct reward video map
+  const defaultVideoMap: Record<number, string> = {
+    1: "/assets/videos/andheri station.mp4",
+    2: "/assets/videos/paagal paan bhandaar bandra.mp4",
+    3: "/assets/videos/dadar flower mkt.mp4",
+    4: "/assets/videos/chor bazaar bhendi bazaar.mp4",
+    5: "/assets/videos/marine drive promenade.mp4",
+    6: "/assets/videos/asiatic society library.mp4",
   };
 
-  const currentImage = imageUrl || defaultImageMap[spotNumber] || "/assets/nodes/spot1_andheri.jpg";
+  const currentVideo =
+    videoLoopUrl || defaultVideoMap[spotNumber] || "/assets/videos/andheri station.mp4";
 
-  // Story titles from k.pdf
+  // Story titles for levels 1 to 6
   const defaultTitleMap: Record<number, string> = {
-    74: "FRED JUST GOT DOWN A MOVING LOCAL TRAIN",
-    118: "FRED JUST WALKED DADAR FLOWER MARKET WITHOUT BEING PICKPOCKETED",
-    162: "SOMEONE GIVE FRED AN AADHAR CARD ALREADY. HE JUST ATE A FIRE PAAN AT PAAGAL PANWAADI",
-    89: "THE FORTUNE-TELLING WEIGHT MACHINES IN CHOR BAZAAR JUST TOLD FRED HIS FORTUNE",
-    147: "FRED JUST GOT A SEA-VIEW TEL-MAALISH AT MARINE DRIVE PROMENADE",
-    195: "FRED JUST ROMANCED A GIRL ON THE ASIATIC LIBRARY STAIRS",
+    1: "FRED JUST GOT DOWN A MOVING LOCAL TRAIN",
+    2: "SOMEONE GIVE FRED AN AADHAR CARD ALREADY. HE JUST ATE A FIRE PAAN AT PAAGAL PANWAADI",
+    3: "FRED JUST WALKED DADAR FLOWER MARKET WITHOUT BEING PICKPOCKETED",
+    4: "THE FORTUNE-TELLING WEIGHT MACHINES IN CHOR BAZAAR JUST TOLD FRED HIS FORTUNE",
+    5: "FRED JUST GOT A SEA-VIEW TEL-MAALISH AT MARINE DRIVE PROMENADE",
+    6: "FRED JUST ROMANCED A GIRL ON THE ASIATIC LIBRARY STAIRS",
   };
 
   const displayTitle = storyTitle || defaultTitleMap[spotNumber] || targetName;
@@ -107,112 +116,8 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   const [selectedCity, setSelectedCity] = useState("Mumbai");
   const [pitchText, setPitchText] = useState("");
   const [pitchSubmitted, setPitchSubmitted] = useState(false);
-  const [isPlayingFallback, setIsPlayingFallback] = useState(false);
 
-  // Procedural 2D Animated Cartoon Loop (Fallback when user clicks replay)
-  useEffect(() => {
-    if (!isPlayingFallback) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let frame = 0;
-    let animId: number;
-
-    const render = () => {
-      frame++;
-      const w = canvas.width;
-      const h = canvas.height;
-
-      ctx.fillStyle = "#152066";
-      ctx.fillRect(0, 0, w, h);
-
-      // Warm festival glow
-      const grad = ctx.createRadialGradient(w / 2, h / 2, 20, w / 2, h / 2, w / 1.7);
-      grad.addColorStop(0, "rgba(255, 46, 154, 0.4)");
-      grad.addColorStop(1, "rgba(21, 32, 102, 0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
-
-      // Swaying Marigold Garlands
-      const sway = Math.sin(frame * 0.05) * 8;
-      for (let i = 0; i < 7; i++) {
-        const x = 30 + i * 45;
-        const garlandLength = 90 + (i % 3) * 20;
-
-        ctx.strokeStyle = "#CFFF04";
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.quadraticCurveTo(x + sway, garlandLength / 2, x, garlandLength);
-        ctx.stroke();
-
-        for (let j = 15; j < garlandLength; j += 18) {
-          ctx.fillStyle = j % 36 === 0 ? "#FF8A00" : "#FFE600";
-          ctx.beginPath();
-          ctx.arc(x + Math.sin(j + frame * 0.05) * 4, j, 7, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#1C1C1C";
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-        }
-      }
-
-      // Fred Again Cartoon Character Figure
-      const charX = w / 2;
-      const bounce = Math.sin(frame * 0.12) * 6;
-      const charY = h / 2 + 10 + bounce;
-
-      // Shadow on floor
-      ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-      ctx.beginPath();
-      ctx.ellipse(charX, h - 25, 45, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Torso
-      ctx.fillStyle = "#FF2E9A";
-      ctx.beginPath();
-      ctx.roundRect(charX - 22, charY - 10, 44, 48, 10);
-      ctx.fill();
-      ctx.strokeStyle = "#1C1C1C";
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Head
-      ctx.fillStyle = "#FFE0BD";
-      ctx.beginPath();
-      ctx.arc(charX, charY - 32, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "#1C1C1C";
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Hair
-      ctx.fillStyle = "#4A2E18";
-      ctx.beginPath();
-      ctx.arc(charX, charY - 38, 20, Math.PI, Math.PI * 2);
-      ctx.fill();
-
-      // DJ Headphones
-      ctx.strokeStyle = "#CFFF04";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(charX, charY - 36, 23, Math.PI * 0.9, Math.PI * 2.1);
-      ctx.stroke();
-
-      // Smile
-      ctx.fillStyle = "#D62828";
-      ctx.beginPath();
-      ctx.arc(charX, charY - 26, 6, 0, Math.PI);
-      ctx.fill();
-
-      animId = requestAnimationFrame(render);
-    };
-
-    render();
-    return () => cancelAnimationFrame(animId);
-  }, [isPlayingFallback]);
+  const currentImage = imageUrl || `/assets/nodes/spot${spotNumber}_andheri.jpg`;
 
   // Handle Share to specific platforms
   const handlePlatformShare = (platform: string) => {
@@ -250,10 +155,10 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   // Download Story Card for Instagram
   const handleDownloadCard = () => {
     const link = document.createElement("a");
-    link.href = currentImage;
-    link.download = `FredAgain_Bandhunt_Spot${spotNumber}.jpg`;
+    link.href = currentVideo;
+    link.download = `FredAgain_Bandhunt_Level${spotNumber}.mp4`;
     link.click();
-    setCopiedShare("Instagram Story Card Downloaded! 📸");
+    setCopiedShare("Instagram Story Video Downloaded! 📸");
     setTimeout(() => setCopiedShare(null), 3000);
   };
 
@@ -302,37 +207,23 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           </button>
         </div>
 
-        {/* 2. Pixel Artwork Illustration / Video Window */}
-        <div className="relative aspect-video w-full rounded-2xl overflow-hidden border-[2.5px] border-[#1C1C1C] shadow-inner bg-[#152066]">
-          {isPlayingFallback ? (
-            <canvas ref={canvasRef} width={640} height={360} className="w-full h-full object-cover" />
-          ) : (
-            <div className="relative w-full h-full">
-              <Image
-                src={currentImage}
-                alt={displayTitle}
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          )}
+        {/* 2. Direct Official Reward Video Window */}
+        <div className="relative aspect-video w-full rounded-2xl overflow-hidden border-[2.5px] border-[#1C1C1C] shadow-inner bg-black">
+          <video
+            src={currentVideo}
+            controls
+            autoPlay
+            playsInline
+            loop
+            className="w-full h-full object-cover"
+          />
 
-          {/* Badge over artwork */}
-          <div className="absolute bottom-2.5 left-2.5 pointer-events-none">
+          {/* Badge over video */}
+          <div className="absolute bottom-2.5 left-2.5 pointer-events-none z-10">
             <span className="text-[10px] font-mono font-black uppercase px-2.5 py-1 bg-white text-[#1C1C1C] border border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] rounded-md">
               ★ {locationName}
             </span>
           </div>
-
-          {/* Replay Overlay Button */}
-          <button
-            onClick={() => setIsPlayingFallback(!isPlayingFallback)}
-            className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black text-white text-[10px] font-sans font-black uppercase flex items-center gap-1 border border-white/40 cursor-pointer transition-all"
-          >
-            <Play className="w-3 h-3 fill-white" />
-            <span>{isPlayingFallback ? "Show Art" : "Replay video"}</span>
-          </button>
         </div>
 
         {/* 3. Node Revealed Story Title & Lore - Center Aligned */}

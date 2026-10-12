@@ -26,12 +26,12 @@ export const LiveDropTracker: React.FC<LiveDropTrackerProps> = ({
   sightings = [],
 }) => {
   // Page 11 High-Contrast Funnel Progression:
-  const funnelSteps = [
+  const funnelSteps: Array<{ label: string; count: number | string; bg: string }> = [
     { label: "SIGNED UP", count: 100, bg: "bg-white text-[#1C1C1C]" },
     { label: "CROSSED CLUE 1", count: 50, bg: "bg-[#00F0FF] text-[#1C1C1C]" },
     { label: "CROSSED CLUE 2", count: 20, bg: "bg-[#CFFF04] text-[#1C1C1C]" },
     { label: "CLOSE TO CLUE 3", count: 10, bg: "bg-[#FFE600] text-[#1C1C1C]" },
-    { label: "TICKETS REMAINING", count: 4, bg: "bg-[#FF0040] text-white" },
+    { label: "TICKETS REMAINING", count: "FEW LEFT", bg: "bg-[#FF0040] text-white" },
   ];
 
   return (
@@ -53,7 +53,7 @@ export const LiveDropTracker: React.FC<LiveDropTrackerProps> = ({
         <div className="flex items-center gap-1.5 bg-[#FF0040] text-white border-2 border-[#1C1C1C] px-3 py-1.5 rounded-xl shadow-[2px_2px_0px_#1C1C1C] animate-pulse">
           <Ticket className="w-4 h-4 text-white" />
           <span className="text-xs font-mono font-black uppercase">
-            {remainingPasses} PASSES LEFT!
+            FEW PASSES LEFT!
           </span>
         </div>
       </div>

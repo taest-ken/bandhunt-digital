@@ -52,17 +52,6 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
     ledShadow = "0 0 8px #00E5FF";
   }
 
-  // Cursor position tracking for Sonar Radar pulse
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      setCursorPos({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleGlobalMouseMove, { passive: true });
-    return () => window.removeEventListener("mousemove", handleGlobalMouseMove);
-  }, []);
-
   // RAF-throttled velocity updater to prevent React render stutter
   const lastVelocityRef = useRef({ vx: 0, vy: 0 });
   const pendingVelocityRef = useRef({ vx: 0, vy: 0 });
@@ -184,98 +173,78 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
   else if (proximity >= 0.15) distanceHint = "SIGNAL DETECTED (~1.8km)";
 
   return (
-    <>
-      {/* Dynamic Color-Changing Sonar Radar Behind the Cursor */}
-      {cursorPos && (
+    <div className="relative flex flex-col items-center select-none touch-none">
+      {/* Handheld Device Container */}
+      <div
+        ref={containerRef}
+        onPointerDown={handlePointerDown}
+        className={`relative w-[200px] h-[320px] sm:w-[220px] sm:h-[350px] cursor-grab active:cursor-grabbing transition-transform select-none ${
+          isLockedIn
+            ? "cursor-pointer animate-pulse"
+            : isDragging
+            ? "scale-105 drop-shadow-[8px_8px_0px_#1C1C1C]"
+            : "hover:scale-102 drop-shadow-[6px_6px_0px_#1C1C1C]"
+        }`}
+        style={{
+          transform: !isLockedIn
+            ? `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.12}deg)`
+            : undefined,
+          transition: isDragging ? "none" : "transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        }}
+      >
+        {/* Unified Pixel Art Device Body */}
+        <Image
+          src="/assets/detector/body.png"
+          alt="Handheld Detector"
+          fill
+          className={`object-contain pointer-events-none transition-all ${
+            isLockedIn ? "brightness-110" : ""
+          }`}
+          priority
+        />
+
+        {/* 1. Directional Heading Beacon (Positioned directly above antenna tip) */}
         <div
-          className="fixed pointer-events-none z-20 -translate-x-1/2 -translate-y-1/2 transition-transform duration-75"
-          style={{
-            left: `${cursorPos.x}px`,
-            top: `${cursorPos.y}px`,
-          }}
+          className="absolute top-[6.5%] left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-30 shadow-[1px_1px_0px_#1C1C1C] border border-[#FFE600]/40"
+          title="Direction to target"
         >
-          {/* Concentric Pulsing Ripples */}
+          <Navigation
+            className="w-3.5 h-3.5 text-[#CFFF04] transition-transform duration-200"
+            style={{
+              transform: `rotate(${bearing}deg)`,
+            }}
+          />
+        </div>
+
+        {/* 2. GLOWING DOT & COLOR-CHANGING SONAR RADAR PULSE ON THE ANTENNA TIP */}
+        <div className="absolute top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-30">
+          {/* Concentric Expanding Pulsing Sonar Waves */}
           <div
-            className="absolute -inset-5 rounded-full border-2 animate-ping opacity-50"
+            className="absolute w-12 h-12 rounded-full border-2 animate-ping opacity-60"
             style={{ borderColor: ledColor }}
           />
           <div
-            className="w-8 h-8 rounded-full border-2 flex items-center justify-center opacity-80"
-            style={{
-              borderColor: ledColor,
-              boxShadow: `0 0 14px ${ledColor}`,
-              backgroundColor: `${ledColor}15`,
-            }}
-          >
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: ledColor }}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="relative flex flex-col items-center select-none touch-none">
-        {/* Handheld Device Container */}
-        <div
-          ref={containerRef}
-          onPointerDown={handlePointerDown}
-          className={`relative w-[200px] h-[320px] sm:w-[220px] sm:h-[350px] cursor-grab active:cursor-grabbing transition-transform select-none ${
-            isLockedIn
-              ? "cursor-pointer animate-pulse"
-              : isDragging
-              ? "scale-105 drop-shadow-[8px_8px_0px_#1C1C1C]"
-              : "hover:scale-102 drop-shadow-[6px_6px_0px_#1C1C1C]"
-          }`}
-          style={{
-            transform: !isLockedIn
-              ? `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.12}deg)`
-              : undefined,
-            transition: isDragging ? "none" : "transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-          }}
-        >
-          {/* Unified Pixel Art Device Body */}
-          <Image
-            src="/assets/detector/body.png"
-            alt="Handheld Detector"
-            fill
-            className={`object-contain pointer-events-none transition-all ${
-              isLockedIn ? "brightness-110" : ""
-            }`}
-            priority
+            className="absolute w-20 h-20 rounded-full border-2 animate-pulse opacity-30"
+            style={{ borderColor: ledColor }}
           />
 
-          {/* 1. SINGLE LED Dot on Antenna Tip (Glow tightly confined to antenna only) */}
-          <div className="absolute top-[3.8%] left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none z-20">
-            {/* Confined glow ring around antenna tip */}
-            <div
-              className="absolute w-8 h-8 rounded-full pointer-events-none transition-all duration-300 opacity-60"
-              style={{
-                background: `radial-gradient(circle, ${ledColor} 0%, rgba(0,0,0,0) 70%)`,
-              }}
-            />
-            {/* The physical glowing bulb */}
-            <div
-              className="w-3.5 h-3.5 rounded-full border-2 border-[#1C1C1C] transition-all duration-300"
-              style={{
-                backgroundColor: ledColor,
-                boxShadow: ledShadow,
-              }}
-            />
-          </div>
-
-          {/* 2. Directional Heading Beacon */}
+          {/* Radial Light Glow around antenna tip */}
           <div
-            className="absolute top-[16.5%] left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-20 shadow-sm"
-            title="Direction to target"
-          >
-            <Navigation
-              className="w-3.5 h-3.5 text-[#CFFF04] transition-transform duration-200"
-              style={{
-                transform: `rotate(${bearing}deg)`,
-              }}
-            />
-          </div>
+            className="absolute w-10 h-10 rounded-full transition-all duration-300 opacity-70 pointer-events-none"
+            style={{
+              background: `radial-gradient(circle, ${ledColor} 0%, rgba(0,0,0,0) 70%)`,
+            }}
+          />
+
+          {/* Physical Glowing LED Dot Overlapping Antenna Tip */}
+          <div
+            className="w-4 h-4 rounded-full border-2 border-[#1C1C1C] transition-all duration-300"
+            style={{
+              backgroundColor: ledColor,
+              boxShadow: ledShadow,
+            }}
+          />
+        </div>
 
           {/* 3. Analog Gauge: Small Needle Centered in Screen Dial */}
           <div className="absolute top-[31.5%] inset-x-0 mx-auto w-[110px] h-[55px] flex items-end justify-center pointer-events-none overflow-hidden z-20">
@@ -333,6 +302,5 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
         </div>
       </div>
     </div>
-  </>
-);
+  );
 };

@@ -16,11 +16,19 @@ class HitmapAudioEngine {
   private synthLoopActive = false;
   private synthTimer: number | null = null;
 
+  // Real MP3 playback pipeline connected to Web Audio DSP
+  private audioElement: HTMLAudioElement | null = null;
+  private mediaSource: MediaElementAudioSourceNode | null = null;
+  private currentTrackUrl: string | null = null;
+  private loopStart: number = 0;
+  private loopEnd: number | null = null;
+
   // Phase 2 Pirate Radio Noise Node
   private radioNoiseNode: AudioBufferSourceNode | null = null;
   private radioGainNode: GainNode | null = null;
 
   private isMuted = false;
+  private isDucked = false;
   private unlocked = false;
 
   public async unlockAudio(): Promise<boolean> {
@@ -45,7 +53,6 @@ class HitmapAudioEngine {
 
       this.initGraph();
       this.unlocked = true;
-      this.startProceduralBeatLoop(); // Start high-energy beat loop immediately
       return true;
     } catch (e) {
       console.error("Audio unlock error:", e);
@@ -181,8 +188,23 @@ class HitmapAudioEngine {
 
   public setMute(muted: boolean) {
     this.isMuted = muted;
-    if (this.masterGainNode && this.ctx) {
-      this.masterGainNode.gain.setTargetAtTime(muted ? 0.0 : 0.85, this.ctx.currentTime, 0.05);
+    this.applyMasterGain();
+  }
+
+  public duckAudio(duck: boolean) {
+    this.isDucked = duck;
+    this.applyMasterGain();
+  }
+
+  private applyMasterGain() {
+    if (!this.masterGainNode || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    if (this.isMuted) {
+      this.masterGainNode.gain.setTargetAtTime(0.0, now, 0.05);
+    } else if (this.isDucked) {
+      this.masterGainNode.gain.setTargetAtTime(0.08, now, 0.08); // Ducked for video playback
+    } else {
+      this.masterGainNode.gain.setTargetAtTime(0.85, now, 0.08);
     }
   }
 
@@ -193,6 +215,60 @@ class HitmapAudioEngine {
 
   public isAudioUnlocked(): boolean {
     return this.unlocked;
+  }
+
+  // Play official MP3 node track through Web Audio DSP (Filter + Gain + Compressor)
+  public playNodeTrack(trackUrl: string, loopStart: number = 0, loopEnd?: number) {
+    if (typeof window === "undefined" || !this.ctx) return;
+
+    this.stopProceduralBeatLoop();
+    this.loopStart = loopStart;
+    this.loopEnd = loopEnd ?? null;
+
+    if (!this.audioElement) {
+      this.audioElement = new Audio();
+      this.audioElement.crossOrigin = "anonymous";
+      this.audioElement.preload = "auto";
+      try {
+        this.mediaSource = this.ctx.createMediaElementSource(this.audioElement);
+        this.mediaSource.connect(this.deckAGain!);
+      } catch (err) {
+        console.warn("MediaElementAudioSource connection:", err);
+      }
+
+      this.audioElement.addEventListener("timeupdate", () => {
+        if (!this.audioElement) return;
+        if (this.loopEnd !== null && this.audioElement.currentTime >= this.loopEnd) {
+          this.audioElement.currentTime = this.loopStart;
+        }
+      });
+
+      this.audioElement.addEventListener("ended", () => {
+        if (!this.audioElement) return;
+        this.audioElement.currentTime = this.loopStart;
+        this.audioElement.play().catch(() => {});
+      });
+    }
+
+    if (this.currentTrackUrl !== trackUrl) {
+      this.currentTrackUrl = trackUrl;
+      this.audioElement.src = trackUrl;
+      this.audioElement.currentTime = loopStart;
+      this.audioElement.play().catch((e) => {
+        console.warn("Track play deferred until user gesture:", e);
+      });
+    } else if (this.audioElement.paused) {
+      this.audioElement.currentTime = loopStart;
+      this.audioElement.play().catch(() => {});
+    }
+  }
+
+  public stopProceduralBeatLoop() {
+    this.synthLoopActive = false;
+    if (this.synthTimer) {
+      clearTimeout(this.synthTimer);
+      this.synthTimer = null;
+    }
   }
 
   // Self-contained procedural Fred Again style 4-on-the-floor beat loop (kick, bass, emotional chords)

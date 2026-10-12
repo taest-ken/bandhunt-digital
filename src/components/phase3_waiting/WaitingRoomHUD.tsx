@@ -29,7 +29,7 @@ export const WaitingRoomHUD: React.FC<WaitingRoomHUDProps> = ({
   };
 
   return (
-    <div className="fixed inset-y-0 right-4 sm:right-6 md:right-12 lg:right-20 z-30 pointer-events-none flex flex-col justify-center max-w-[calc(100vw-2rem)] sm:max-w-md w-full">
+    <div className="fixed inset-y-0 right-4 sm:right-12 md:right-28 lg:right-44 xl:right-56 z-30 pointer-events-none flex flex-col justify-center max-w-[calc(100vw-2rem)] sm:max-w-md w-full">
       <div className="w-full bg-white border-[3.5px] border-[#1C1C1C] rounded-3xl p-5 md:p-6 text-center flex flex-col items-center gap-3.5 shadow-[6px_6px_0px_#1C1C1C] pointer-events-auto relative max-h-[92vh] overflow-y-auto my-auto">
         {/* Top Header: Centered BrandCollabLogo */}
         <div className="flex flex-col items-center gap-2.5 border-b-2 border-[#1C1C1C]/15 pb-3 w-full">
