@@ -50,6 +50,11 @@ export default function HitmapApp() {
 
   // Level Progression: 0..5 index corresponding to Level 1..6
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
+  const currentLevelIndexRef = useRef(0);
+  useEffect(() => {
+    currentLevelIndexRef.current = currentLevelIndex;
+  }, [currentLevelIndex]);
+
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
 
   // Ping Throttle
@@ -61,7 +66,7 @@ export default function HitmapApp() {
       try {
         const targetPhase = phaseOverride || activePhase;
         const targetLevel =
-          typeof levelIdxOverride === "number" ? levelIdxOverride : currentLevelIndex;
+          typeof levelIdxOverride === "number" ? levelIdxOverride : currentLevelIndexRef.current;
         const url = `/api/tour/schedule?phase=${targetPhase}&nodeIndex=${targetLevel}`;
         const res = await fetch(url);
         if (res.ok) {
@@ -77,7 +82,7 @@ export default function HitmapApp() {
         console.error("Error fetching schedule:", e);
       }
     },
-    [activePhase, currentLevelIndex]
+    [activePhase]
   );
 
   useEffect(() => {
@@ -108,7 +113,8 @@ export default function HitmapApp() {
   const pingRadarOracle = useCallback(
     async (coord: [number, number], levelIdx?: number) => {
       try {
-        const targetLevel = typeof levelIdx === "number" ? levelIdx : currentLevelIndex;
+        const targetLevel =
+          typeof levelIdx === "number" ? levelIdx : currentLevelIndexRef.current;
         const res = await fetch("/api/radar/ping", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -127,17 +133,19 @@ export default function HitmapApp() {
         console.error("Error pinging radar oracle:", e);
       }
     },
-    [currentLevelIndex]
+    []
   );
 
   // 4. Handle Map Center Change
   const handleCenterChange = useCallback(
-    (newCenter: [number, number]) => {
+    (newCenter: [number, number], levelIndex?: number) => {
       setCurrentCoord(newCenter);
       const now = performance.now();
-      if (now - lastPingTimeRef.current > 120) {
+      if (now - lastPingTimeRef.current > 80) {
         lastPingTimeRef.current = now;
-        pingRadarOracle(newCenter);
+        const activeLvl =
+          typeof levelIndex === "number" ? levelIndex : currentLevelIndexRef.current;
+        pingRadarOracle(newCenter, activeLvl);
       }
     },
     [pingRadarOracle]
@@ -145,6 +153,7 @@ export default function HitmapApp() {
 
   // 5. Hunt For The Node Again: resets spawn point safely away from node
   const handleHuntAgain = useCallback(() => {
+    currentLevelIndexRef.current = currentLevelIndex;
     const currentNode = TOUR_NODES[currentLevelIndex];
     const targetCoord = currentNode?.coordinates || radar.nodeReward?.coordinates;
     const newSpawn = getRandomMumbaiSpawn(targetCoord, 3.5);
@@ -176,12 +185,17 @@ export default function HitmapApp() {
   // 6. Advance to Next Level (1 -> 2 -> ... -> 6)
   const handleNextLevel = useCallback(() => {
     const nextIdx = (currentLevelIndex + 1) % 6;
+    currentLevelIndexRef.current = nextIdx; // Update ref immediately!
     setCurrentLevelIndex(nextIdx);
     setCompletedLevels((prev) => Array.from(new Set([...prev, currentLevelIndex + 1])));
     setShowRewardModal(false);
     setHasDismissedReward(false);
 
     const nextNode = TOUR_NODES[nextIdx];
+    console.log(
+      `[HITMAP] Target updated to Level ${nextIdx + 1} (${nextNode.locationName}): [${nextNode.coordinates.join(", ")}]`
+    );
+
     const newSpawn = getRandomMumbaiSpawn(nextNode?.coordinates, 3.5);
     setCurrentCoord(newSpawn);
     setResetCoord(newSpawn);
@@ -256,6 +270,7 @@ export default function HitmapApp() {
       <MapCanvas
         initialCenter={currentCoord}
         resetCoord={resetCoord}
+        currentLevelIndex={currentLevelIndex}
         velocity={velocity}
         onCenterChange={handleCenterChange}
         isLockedIn={radar.verified}
@@ -293,8 +308,8 @@ export default function HitmapApp() {
           {/* Page 3 Discovery State Alert Banner (when lock-in achieved before modal) */}
           {radar.verified && !showRewardModal && !hasDismissedReward && (
             <DiscoveryAlert
-              locationName={radar.nodeReward?.locationName || "Andheri"}
-              discoveryQuote={radar.nodeReward?.discoveryQuote}
+              locationName={radar.nodeReward?.locationName || schedule.currentNode.locationName || "Landmark"}
+              discoveryQuote={radar.nodeReward?.discoveryQuote || schedule.currentNode.discoveryQuote}
               onReveal={() => {
                 setHasDismissedReward(false);
                 setShowRewardModal(true);

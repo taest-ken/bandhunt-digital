@@ -39,7 +39,7 @@ export const DiscoveryAlert: React.FC<DiscoveryAlertProps> = ({
             </div>
 
             <p className="text-xs sm:text-[13px] font-sans font-black leading-snug tracking-tight text-white">
-              Band was last seen 15m ago on the packed {locationName} platforms.
+              {discoveryQuote || `Band was last seen near ${locationName}.`}
             </p>
           </div>
         </div>

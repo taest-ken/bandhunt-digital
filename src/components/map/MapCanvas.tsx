@@ -9,8 +9,9 @@ import { Plus, Minus } from "lucide-react";
 interface MapCanvasProps {
   initialCenter: [number, number]; // [lng, lat]
   resetCoord?: [number, number];
+  currentLevelIndex?: number;
   velocity: { vx: number; vy: number }; // from joystick
-  onCenterChange: (center: [number, number]) => void;
+  onCenterChange: (center: [number, number], levelIndex?: number) => void;
   isLockedIn: boolean;
   lockedCoordinates?: [number, number];
   activePhase: TourPhase;
@@ -60,6 +61,7 @@ const BANGALORE_ROUTE_COORDS: [number, number][] = [
 export const MapCanvas: React.FC<MapCanvasProps> = ({
   initialCenter,
   resetCoord,
+  currentLevelIndex = 0,
   velocity,
   onCenterChange,
   isLockedIn,
@@ -75,6 +77,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   const lastTimeRef = useRef<number>(performance.now());
   const throttleTimerRef = useRef<number>(0);
   const currentPhaseRef = useRef<TourPhase>(activePhase);
+  const onCenterChangeRef = useRef(onCenterChange);
+  const currentLevelIndexRef = useRef(currentLevelIndex);
+
+  // Keep refs always up to date with latest props
+  useEffect(() => {
+    onCenterChangeRef.current = onCenterChange;
+    currentLevelIndexRef.current = currentLevelIndex;
+  });
 
   // Camera repositioning when resetCoord changes (e.g. Next Level or Hunt Again)
   useEffect(() => {
@@ -449,7 +459,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     const reportCenter = () => {
       if (!map) return;
       const center = map.getCenter();
-      onCenterChange([center.lng, center.lat]);
+      onCenterChangeRef.current([center.lng, center.lat], currentLevelIndexRef.current);
     };
 
     map.on("move", () => {
