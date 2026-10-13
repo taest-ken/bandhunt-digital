@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { TOUR_NODES, TOUR_CONFIG } from "@/lib/config/tourSchedule";
 import { TourScheduleResponse, TourPhase } from "@/types/hitmap";
 
-export const runtime = "edge";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

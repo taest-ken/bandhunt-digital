@@ -3,7 +3,6 @@ import { TOUR_NODES, TOUR_CONFIG } from "@/lib/config/tourSchedule";
 import { calculateHaversineDistance, calculateBearing, distanceToProximity } from "@/lib/geo/distance";
 import { RadarPingResponse } from "@/types/hitmap";
 
-export const runtime = "edge";
 
 export async function POST(request: Request) {
   try {
@@ -73,6 +72,6 @@ export async function POST(request: Request) {
     return NextResponse.json(response);
   } catch (e: any) {
     console.error("Radar ping error:", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: e?.message || "Internal server error" }, { status: 500 });
   }
 }
