@@ -28,7 +28,7 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
   const startPointerRef = useRef({ x: 0, y: 0 });
 
   // Spring Physics constants
-  const MAX_RADIUS = 75; // Max physical deflection when dragging the entire device
+  const MAX_RADIUS = 48; // Max physical deflection when dragging the half-sized device
   const SPEED_MULTIPLIER = 1200; // Map panning velocity
 
   // Needle angle: -48deg (Cold/Left) to +48deg (Hot/Right)
@@ -178,12 +178,12 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
-        className={`relative w-[160px] h-[356px] sm:w-[176px] sm:h-[391px] cursor-grab active:cursor-grabbing transition-transform select-none ${
+        className={`relative w-[84px] h-[187px] sm:w-[94px] sm:h-[209px] cursor-grab active:cursor-grabbing transition-transform select-none ${
           isLockedIn
             ? "cursor-pointer animate-pulse"
             : isDragging
-            ? "scale-105 drop-shadow-[8px_8px_0px_#1C1C1C]"
-            : "hover:scale-102 drop-shadow-[6px_6px_0px_#1C1C1C]"
+            ? "scale-105 drop-shadow-[5px_5px_0px_#1C1C1C]"
+            : "hover:scale-102 drop-shadow-[4px_4px_0px_#1C1C1C]"
         }`}
         style={{
           transform: !isLockedIn
@@ -205,11 +205,11 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
 
         {/* 1. Directional Heading Beacon (Positioned floating directly above antenna tip) */}
         <div
-          className="absolute -top-7 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-30 shadow-[1px_1px_0px_#1C1C1C] border border-[#FFE600]/40"
+          className="absolute -top-5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-30 shadow-[1px_1px_0px_#1C1C1C] border border-[#FFE600]/40"
           title="Direction to target"
         >
           <Navigation
-            className="w-3.5 h-3.5 text-[#CFFF04] transition-transform duration-200"
+            className="w-2.5 h-2.5 text-[#CFFF04] transition-transform duration-200"
             style={{
               transform: `rotate(${bearing}deg)`,
             }}
@@ -220,17 +220,17 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
         <div className="absolute top-[4.7%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-30">
           {/* Concentric Expanding Pulsing Sonar Waves */}
           <div
-            className="absolute w-12 h-12 rounded-full border-2 animate-ping opacity-60"
+            className="absolute w-7 h-7 rounded-full border-2 animate-ping opacity-60"
             style={{ borderColor: ledColor }}
           />
           <div
-            className="absolute w-20 h-20 rounded-full border-2 animate-pulse opacity-30"
+            className="absolute w-12 h-12 rounded-full border animate-pulse opacity-30"
             style={{ borderColor: ledColor }}
           />
 
           {/* Radial Light Glow around antenna tip */}
           <div
-            className="absolute w-10 h-10 rounded-full transition-all duration-300 opacity-70 pointer-events-none"
+            className="absolute w-7 h-7 rounded-full transition-all duration-300 opacity-70 pointer-events-none"
             style={{
               background: `radial-gradient(circle, ${ledColor} 0%, rgba(0,0,0,0) 70%)`,
             }}
@@ -238,7 +238,7 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
 
           {/* Physical Glowing LED Dot Overlapping Antenna Tip */}
           <div
-            className="w-4 h-4 rounded-full border-2 border-[#1C1C1C] transition-all duration-300"
+            className="w-2.5 h-2.5 rounded-full border border-[#1C1C1C] transition-all duration-300"
             style={{
               backgroundColor: ledColor,
               boxShadow: ledShadow,
@@ -250,7 +250,7 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
         <div className="absolute top-[52.1%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 flex items-center justify-center">
           {/* Rotating Needle Arm */}
           <div
-            className="absolute bottom-0 w-1 h-[36px] sm:h-[40px] origin-bottom transition-transform duration-75 ease-out"
+            className="absolute bottom-0 w-0.5 h-[18px] sm:h-[20px] origin-bottom transition-transform duration-75 ease-out"
             style={{
               transform: `rotate(${needleAngle}deg)`,
             }}
@@ -259,18 +259,18 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
             <div
               className={`w-full h-full rounded-t-full transition-colors ${
                 isLockedIn
-                  ? "bg-[#FF0040] shadow-[0_0_8px_#FF0040]"
+                  ? "bg-[#FF0040] shadow-[0_0_6px_#FF0040]"
                   : proximity > 0.7
                   ? "bg-[#FF8A00]"
                   : "bg-[#1C1C1C]"
               }`}
             />
             {/* Red tip */}
-            <div className="absolute top-0 inset-x-0 h-2.5 bg-[#FF0040] rounded-t-full" />
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-[#FF0040] rounded-t-full" />
           </div>
 
           {/* Pivot cap seated directly on the printed black semicircle */}
-          <div className="w-3.5 h-3.5 rounded-full bg-[#1C1C1C] border border-[#FFE600]/60 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#1C1C1C] border border-[#FFE600]/60 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
         </div>
       </div>
 
