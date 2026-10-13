@@ -58,7 +58,7 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
         </div>
 
         {/* Sticker 1: Handheld Detector - Top-Right */}
-        <div className="absolute -top-24 -right-12 sm:-top-28 sm:-right-16 w-48 sm:w-60 h-64 sm:h-80 pointer-events-none rotate-[14deg] drop-shadow-[8px_8px_0px_#1C1C1C] z-30">
+        <div className="absolute -top-22 -right-4 sm:-top-24 sm:-right-6 w-48 sm:w-36 h-44 sm:h-50 pointer-events-none rotate-[14deg] drop-shadow-[8px_8px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/detector/body.png"
             alt="Handheld Detector"
@@ -69,7 +69,7 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
         </div>
 
         {/* Sticker 2: Halftone Headphones - Bottom-Left */}
-        <div className="absolute -bottom-16 -left-14 sm:-bottom-20 sm:-left-18 w-52 sm:w-64 h-52 sm:h-64 pointer-events-none rotate-[-8deg] drop-shadow-[7px_7px_0px_#1C1C1C] z-30">
+        <div className="absolute -bottom-9 -left-14 sm:-bottom-13 sm:-left-18 w-52 sm:w-64 h-52 sm:h-64 pointer-events-none rotate-[-8deg] drop-shadow-[7px_7px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/stickers/headphones.png"
             alt="Headphones"
@@ -80,7 +80,7 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
         </div>
 
         {/* Sticker 3: Pink Pixel Ticket - Bottom-Right */}
-        <div className="absolute -bottom-10 -right-12 sm:-bottom-12 sm:-right-16 w-48 sm:w-56 h-48 sm:h-56 pointer-events-none rotate-[6deg] drop-shadow-[7px_7px_0px_#1C1C1C] z-30">
+        <div className="absolute -bottom-52 -right-16 sm:-bottom-58 sm:-right-40 w-48 sm:w-96 h-88 sm:h-96 pointer-events-none rotate-[6deg] drop-shadow-[7px_7px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/stickers/tickets.png"
             alt="Ticket"
