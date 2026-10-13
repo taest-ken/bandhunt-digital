@@ -405,8 +405,8 @@ export const RewardModal: React.FC<RewardModalProps> = ({
         ) : (
           <button
             onClick={() => {
-              onClose();
               if (onNextLevel) onNextLevel();
+              else onClose();
             }}
             className="w-full py-3.5 px-4 rounded-xl bg-[#CFFF04] hover:bg-[#bceb00] active:scale-98 text-[#1C1C1C] font-black text-xs sm:text-sm uppercase border-2 border-[#1C1C1C] shadow-[4px_4px_0px_#1C1C1C] flex items-center justify-center gap-2 transition-all cursor-pointer animate-pulse"
           >

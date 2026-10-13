@@ -306,12 +306,20 @@ export default function HitmapApp() {
           />
 
           {/* Page 3 Discovery State Alert Banner (when lock-in achieved before modal) */}
-          {radar.verified && !showRewardModal && !hasDismissedReward && (
+          {radar.verified && !showRewardModal && (
             <DiscoveryAlert
-              locationName={radar.nodeReward?.locationName || schedule.currentNode.locationName || "Landmark"}
-              discoveryQuote={radar.nodeReward?.discoveryQuote || schedule.currentNode.discoveryQuote}
+              locationName={
+                radar.nodeReward?.locationName ||
+                TOUR_NODES[currentLevelIndex]?.locationName ||
+                schedule.currentNode.locationName ||
+                "Landmark"
+              }
+              discoveryQuote={
+                radar.nodeReward?.discoveryQuote ||
+                TOUR_NODES[currentLevelIndex]?.discoveryQuote ||
+                schedule.currentNode.discoveryQuote
+              }
               onReveal={() => {
-                setHasDismissedReward(false);
                 setShowRewardModal(true);
               }}
             />
