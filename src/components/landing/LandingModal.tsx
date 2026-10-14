@@ -56,8 +56,8 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
           </div>
         </div>
 
-        {/* Sticker 1: Handheld Detector - Top-Right Corner (Matches reference screenshot 2) */}
-        <div className="absolute -top-14 sm:-top-16 -right-4 sm:-right-6 w-22 sm:w-26 h-48 sm:h-56 pointer-events-none rotate-[12deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
+        {/* Sticker 1: Handheld Detector - Top-Right Corner */}
+        <div className="absolute -top-12 sm:-top-16 -right-2 sm:-right-4 w-[75px] sm:w-[92px] h-[166px] sm:h-[204px] pointer-events-none rotate-[12deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/detector/body.png"
             alt="Handheld Detector"
@@ -67,8 +67,8 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
           />
         </div>
 
-        {/* Sticker 2: Halftone Headphones - Bottom-Left Corner (Matches reference screenshot 2) */}
-        <div className="absolute -bottom-6 sm:-bottom-8 -left-9 sm:-left-12 w-32 sm:w-38 h-32 sm:h-38 pointer-events-none rotate-[-10deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
+        {/* Sticker 2: Halftone Headphones - Bottom-Left Corner */}
+        <div className="absolute -bottom-4 sm:-bottom-6 -left-7 sm:-left-9 w-[110px] sm:w-[130px] h-[148px] sm:h-[175px] pointer-events-none rotate-[-10deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/stickers/headphones.png"
             alt="Headphones"
@@ -78,8 +78,8 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
           />
         </div>
 
-        {/* Sticker 3: Pink Pixel Ticket - Bottom-Right Corner (Matches reference screenshot 2) */}
-        <div className="absolute -bottom-7 sm:-bottom-9 -right-6 sm:-right-8 w-32 sm:w-36 h-32 sm:h-36 pointer-events-none rotate-[4deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
+        {/* Sticker 3: Pink Pixel Ticket - Bottom-Right Corner */}
+        <div className="absolute -bottom-5 sm:-bottom-7 -right-5 sm:-right-7 w-[120px] sm:w-[145px] h-[111px] sm:h-[134px] pointer-events-none rotate-[5deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/stickers/stickers.png"
             alt="Ticket"
