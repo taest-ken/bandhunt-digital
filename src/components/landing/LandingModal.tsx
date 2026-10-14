@@ -41,29 +41,12 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
 
         {/* Action Button & Taped Badge */}
         <div className="w-full flex flex-col items-center gap-2 sm:gap-2.5 pt-1 relative">
-          <div className="relative w-full">
-            <button
-              onClick={onStart}
-              className="w-full py-3.5 sm:py-4 pl-16 sm:pl-20 pr-5 sm:pr-6 rounded-2xl bg-[#CFFF04] hover:bg-[#bcf000] active:scale-95 text-[#1C1C1C] font-black text-[11px] sm:text-xs uppercase border-[2.5px] border-[#1C1C1C] shadow-[4px_4px_0px_#1C1C1C] transition-all flex items-center justify-center relative cursor-pointer y2k-btn-bounce overflow-visible"
-            >
-              {/* Headphone emoji on the badge that the sticker covers */}
-              <span className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/10 flex items-center justify-center text-sm select-none">
-                🎧
-              </span>
-              <span className="whitespace-nowrap tracking-tight">Grab headphones &amp; start hunting.</span>
-            </button>
-
-            {/* Sticker 2: Halftone Headphones - Covers the headphone emoji badge on the left, NEVER covering text */}
-            <div className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 w-18 sm:w-22 h-18 sm:h-22 pointer-events-none rotate-[-12deg] drop-shadow-[4px_4px_0px_#1C1C1C] z-30">
-              <Image
-                src="/assets/stickers/headphones.png"
-                alt="Headphones"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          </div>
+          <button
+            onClick={onStart}
+            className="w-full py-3.5 sm:py-4 px-6 sm:px-8 rounded-2xl bg-[#CFFF04] hover:bg-[#bcf000] active:scale-95 text-[#1C1C1C] font-black text-xs sm:text-[13px] uppercase border-[2.5px] border-[#1C1C1C] shadow-[4px_4px_0px_#1C1C1C] transition-all flex items-center justify-center cursor-pointer y2k-btn-bounce"
+          >
+            <span className="whitespace-nowrap tracking-tight">Grab headphones &amp; start hunting.</span>
+          </button>
 
           {/* Taped Yellow Badge "BEST FOR LAPTOP USE" */}
           <div className="self-center -mt-0.5 rotate-[-2deg]">
@@ -73,8 +56,8 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
           </div>
         </div>
 
-        {/* Sticker 1: Handheld Detector - Top-Right Corner (Consistent scale, completely clear of text) */}
-        <div className="absolute -top-9 -right-2 sm:-top-11 sm:-right-3 w-20 sm:w-24 h-20 sm:h-24 pointer-events-none rotate-[12deg] drop-shadow-[5px_5px_0px_#1C1C1C] z-30">
+        {/* Sticker 1: Handheld Detector - Top-Right Corner (Matches reference screenshot 2) */}
+        <div className="absolute -top-14 sm:-top-16 -right-4 sm:-right-6 w-22 sm:w-26 h-48 sm:h-56 pointer-events-none rotate-[12deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/detector/body.png"
             alt="Handheld Detector"
@@ -84,8 +67,19 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
           />
         </div>
 
-        {/* Sticker 3: Pink Pixel Ticket - Bottom-Right Corner (Consistent scale, completely clear of text) */}
-        <div className="absolute -bottom-5 -right-4 sm:-bottom-6 sm:-right-5 w-20 sm:w-24 h-16 sm:h-20 pointer-events-none rotate-[10deg] drop-shadow-[4px_4px_0px_#1C1C1C] z-30">
+        {/* Sticker 2: Halftone Headphones - Bottom-Left Corner (Matches reference screenshot 2) */}
+        <div className="absolute -bottom-6 sm:-bottom-8 -left-9 sm:-left-12 w-32 sm:w-38 h-32 sm:h-38 pointer-events-none rotate-[-10deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
+          <Image
+            src="/assets/stickers/headphones.png"
+            alt="Headphones"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+
+        {/* Sticker 3: Pink Pixel Ticket - Bottom-Right Corner (Matches reference screenshot 2) */}
+        <div className="absolute -bottom-7 sm:-bottom-9 -right-6 sm:-right-8 w-32 sm:w-36 h-32 sm:h-36 pointer-events-none rotate-[4deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/stickers/stickers.png"
             alt="Ticket"
