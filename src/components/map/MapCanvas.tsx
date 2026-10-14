@@ -16,6 +16,7 @@ interface MapCanvasProps {
   onCenterChange: (center: [number, number], levelIndex?: number) => void;
   isLockedIn: boolean;
   lockedCoordinates?: [number, number];
+  onUnlockCurrentNode?: () => void;
   activePhase: TourPhase;
   meetupCoordinates?: [number, number];
 }
@@ -70,6 +71,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   onCenterChange,
   isLockedIn,
   lockedCoordinates,
+  onUnlockCurrentNode,
   activePhase,
   meetupCoordinates = [72.8358, 18.9320],
 }) => {
@@ -571,15 +573,21 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     if (isLockedIn && lockedCoordinates) {
       if (!markerRef.current) {
         const el = document.createElement("div");
-        el.className = "flex items-center justify-center pointer-events-none";
+        el.className = "flex items-center justify-center cursor-pointer pointer-events-auto select-none group";
+        el.setAttribute("title", "Click to view unlocked level reward");
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
             <span class="animate-ping absolute inline-flex h-20 w-20 rounded-full bg-[#FF0040] opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-12 w-12 bg-[#FFE600] border-[3px] border-[#1C1C1C] items-center justify-center text-base font-black shadow-[3px_3px_0px_#1C1C1C]">
+            <span class="relative inline-flex rounded-full h-12 w-12 bg-[#FFE600] border-[3px] border-[#1C1C1C] items-center justify-center text-base font-black shadow-[3px_3px_0px_#1C1C1C] hover:scale-110 active:scale-95 transition-transform">
               ★
             </span>
           </div>
         `;
+
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          onUnlockCurrentNode?.();
+        });
 
         markerRef.current = new maplibregl.Marker({ element: el })
           .setLngLat(lockedCoordinates)

@@ -99,21 +99,6 @@ export const RewardModal: React.FC<RewardModalProps> = ({
     };
   }, []);
 
-  // Individual 59-second countdown when modal is viewed
-  useEffect(() => {
-    setSecondsLeft(59);
-    const interval = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [spotNumber]);
-
   // Official direct reward video map
   const defaultVideoMap: Record<number, string> = {
     1: "/assets/videos/andheri station.mp4",
@@ -138,6 +123,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   };
 
   const displayTitle = storyTitle || defaultTitleMap[spotNumber] || targetName;
+  const cleanCatchphrase = (catchphrase || "").replace(/^["'“‘\s]+|["'”’\s]+$/g, "").trim();
 
   // Social Share & Crowdsource Pitch States
   const [copiedShare, setCopiedShare] = useState<string | null>(null);
@@ -201,9 +187,11 @@ export const RewardModal: React.FC<RewardModalProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           suggestedCity: selectedCity,
-          experienceDescription: pitchText,
+          contact: pitchText.trim(),
+          experienceDescription: pitchText.trim(),
           submittedBy: "Fred Fan",
           levelUnlocked: spotNumber,
+          source: "reward_modal",
         }),
       });
 
@@ -254,7 +242,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
             {displayTitle}
           </h2>
           <p className="text-xs font-sans text-gray-700 font-medium leading-relaxed">
-            &ldquo;{catchphrase}&rdquo;
+            {cleanCatchphrase}
           </p>
         </div>
 
@@ -349,14 +337,28 @@ export const RewardModal: React.FC<RewardModalProps> = ({
               ★ JOIN THE OFFLINE BANDHUNT
             </span>
             <p className="text-xs font-sans font-bold text-[#1C1C1C] leading-snug text-center">
-              Sign up for invites to the offline bandhunt event in your city. Solve clues, hunt tickets, find your tribe.
+              Sign up for invites to the offline bandhunt event in your city.
+              <br />
+              Solve clues, hunt tickets, find your tribe.
             </p>
           </div>
 
           {pitchSubmitted ? (
-            <div className="bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-full py-2 px-4 text-center text-xs font-black uppercase text-[#1C1C1C] flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
-              <CheckCircle2 className="w-4 h-4 text-[#1C1C1C]" />
-              <span>YOU&apos;RE ON THE TAEST INVITE LIST! 🎉</span>
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="w-full bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-full py-2 px-4 text-center text-xs font-black uppercase text-[#1C1C1C] flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+                <CheckCircle2 className="w-4 h-4 text-[#1C1C1C]" />
+                <span>YOU&apos;RE ON THE TAEST INVITE LIST! 🎉</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPitchSubmitted(false);
+                  setPitchText("");
+                }}
+                className="text-[10px] font-mono font-bold text-gray-500 hover:text-black underline cursor-pointer"
+              >
+                + Register another number / email
+              </button>
             </div>
           ) : (
             <form onSubmit={handlePitchSubmit} className="flex flex-col gap-2">

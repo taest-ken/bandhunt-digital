@@ -307,6 +307,82 @@ export default function HitmapApp() {
     pingRadarOracle(newSpawn, nextIdx);
   }, [currentLevelIndex, activePhase, audioUnlocked, fetchSchedule, pingRadarOracle]);
 
+  // 7. Restart Game from Beginning (Level 1 reset)
+  const handleRestartGame = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm("Restart Bandhunt from Level 1? Your progress will be reset.");
+      if (!confirmed) return;
+    }
+
+    try {
+      localStorage.removeItem("bandhunt_level");
+      localStorage.removeItem("bandhunt_completed");
+      localStorage.removeItem("bandhunt_timer_start");
+      for (let i = 0; i < 6; i++) {
+        localStorage.removeItem(`bandhunt_timer_level_${i}`);
+      }
+    } catch {}
+
+    setCurrentLevelIndex(0);
+    currentLevelIndexRef.current = 0;
+    setCompletedLevels([]);
+    setLevelTimerStartMs(undefined);
+    setShowRewardModal(false);
+    setHasDismissedReward(false);
+    setSelectedPastLevelIndex(null);
+    setShowProximityToast(false);
+    hasShownToastForLevelRef.current = null;
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+
+    const node1 = TOUR_NODES[0];
+    const spawn1 = getRandomMumbaiSpawn(node1.coordinates, 3.5);
+    setCurrentCoord(spawn1);
+    setResetCoord(spawn1);
+    setVelocity({ vx: 0, vy: 0 });
+    setRadar({
+      proximity: 0.05,
+      bearing: 42,
+      jitter: 14,
+      zone: "COLD",
+      verified: false,
+      nodeReward: undefined,
+    });
+
+    if (node1.trackUrl && audioUnlocked) {
+      const engine = getHitmapAudioEngine();
+      engine.playNodeTrack(node1.trackUrl, node1.audioLoopStart ?? 0, node1.audioLoopEnd);
+      engine.updateProximity(0.05);
+    }
+
+    fetchSchedule(activePhase, 0);
+    pingRadarOracle(spawn1, 0);
+  }, [audioUnlocked, activePhase, fetchSchedule, pingRadarOracle]);
+
+  // Unlock current node and ensure timer persists across modal close/open
+  const handleUnlockCurrentNode = useCallback(() => {
+    const timerKey = `bandhunt_timer_level_${currentLevelIndex}`;
+    let startMs = levelTimerStartMs;
+    if (!startMs) {
+      try {
+        const saved = localStorage.getItem(timerKey);
+        if (saved) {
+          startMs = parseInt(saved, 10);
+        }
+      } catch {}
+    }
+    if (!startMs && currentLevelIndex < 5) {
+      startMs = Date.now();
+      try {
+        localStorage.setItem(timerKey, String(startMs));
+        localStorage.setItem("bandhunt_timer_start", String(startMs));
+      } catch {}
+    }
+    setLevelTimerStartMs(startMs);
+    setSelectedPastLevelIndex(null);
+    setHasDismissedReward(false);
+    setShowRewardModal(true);
+  }, [currentLevelIndex, levelTimerStartMs]);
+
   const isAllCompleted = completedLevels.length >= 6 || (currentLevelIndex === 5 && radar.verified);
 
   // Continuous 60fps Color Spectrum
@@ -383,6 +459,7 @@ export default function HitmapApp() {
         onCenterChange={handleCenterChange}
         isLockedIn={radar.verified}
         lockedCoordinates={radar.nodeReward?.coordinates}
+        onUnlockCurrentNode={handleUnlockCurrentNode}
         activePhase={activePhase}
         meetupCoordinates={schedule?.meetupCoordinates}
       />
@@ -433,6 +510,7 @@ export default function HitmapApp() {
             trackArtist={schedule.currentNode.trackArtist}
             isAllCompleted={isAllCompleted}
             onOpenRSVP={() => setShowRSVPModal(true)}
+            onRestartGame={handleRestartGame}
           />
 
           {/* Page 3 Discovery State Alert Banner (when lock-in achieved before modal) */}
@@ -449,18 +527,7 @@ export default function HitmapApp() {
                 TOUR_NODES[currentLevelIndex]?.discoveryQuote ||
                 schedule.currentNode.discoveryQuote
               }
-              onReveal={() => {
-                if (!levelTimerStartMs && currentLevelIndex < 5) {
-                  const now = Date.now();
-                  setLevelTimerStartMs(now);
-                  try {
-                    localStorage.setItem("bandhunt_timer_start", String(now));
-                  } catch {}
-                }
-                setSelectedPastLevelIndex(null);
-                setHasDismissedReward(false);
-                setShowRewardModal(true);
-              }}
+              onReveal={handleUnlockCurrentNode}
             />
           )}
 
@@ -472,18 +539,7 @@ export default function HitmapApp() {
               spectrum={spectrum}
               isLockedIn={radar.verified}
               onVelocityChange={handleVelocityChange}
-              onTapUnlock={() => {
-                if (!levelTimerStartMs && currentLevelIndex < 5) {
-                  const now = Date.now();
-                  setLevelTimerStartMs(now);
-                  try {
-                    localStorage.setItem("bandhunt_timer_start", String(now));
-                  } catch {}
-                }
-                setSelectedPastLevelIndex(null);
-                setHasDismissedReward(false);
-                setShowRewardModal(true);
-              }}
+              onTapUnlock={handleUnlockCurrentNode}
             />
           </div>
         </>
@@ -494,19 +550,23 @@ export default function HitmapApp() {
         <>
           <Phase2PerimeterDoodle />
 
-          <div className="fixed inset-0 z-30 flex flex-col justify-between p-4 pointer-events-none">
+          <div className="fixed inset-0 z-30 flex flex-col justify-between p-3 sm:p-6 lg:p-8 pointer-events-none">
             <StreetLockdownBanner />
 
-            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 w-full max-w-6xl mx-auto pb-4 pointer-events-none">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6 w-full px-3 sm:px-8 lg:px-14 pb-8 sm:pb-6 pointer-events-none">
               {schedule.liveDropMeta && (
-                <LiveDropTracker
-                  emergencyZone={schedule.liveDropMeta.emergencyZone}
-                  meetupLocationName="The Steps of Asiatic Society Library"
-                  remainingPasses={schedule.liveDropMeta.remainingPasses}
-                  sightings={schedule.liveDropMeta.sightings}
-                />
+                <div className="w-full sm:w-auto max-w-sm lg:max-w-md pointer-events-auto">
+                  <LiveDropTracker
+                    emergencyZone={schedule.liveDropMeta.emergencyZone}
+                    meetupLocationName="The Steps of Asiatic Society Library"
+                    remainingPasses={schedule.liveDropMeta.remainingPasses}
+                    sightings={schedule.liveDropMeta.sightings}
+                  />
+                </div>
               )}
-              <StreetCallToAction />
+              <div className="w-full sm:w-auto max-w-sm lg:max-w-md pointer-events-auto">
+                <StreetCallToAction />
+              </div>
             </div>
           </div>
         </>

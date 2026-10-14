@@ -39,16 +39,24 @@ export const BrandCollabLogo: React.FC<BrandCollabLogoProps> = ({
         ✕
       </span>
 
-      {/* Taest Official Black Logo */}
-      <Image
-        src="/assets/taest-logo-black.png"
-        alt="taest.club"
-        width={100}
-        height={28}
-        style={{ height: `${actualTaestHeight}px`, width: "auto" }}
-        className="object-contain"
-        priority
-      />
+      {/* Taest Official Black Logo (tappable -> https://taest.in) */}
+      <a
+        href="https://taest.in"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Visit taest.in"
+        className="hover:opacity-75 active:scale-95 transition-all cursor-pointer pointer-events-auto inline-flex items-center"
+      >
+        <Image
+          src="/assets/taest-logo-black.png"
+          alt="taest.in"
+          width={100}
+          height={28}
+          style={{ height: `${actualTaestHeight}px`, width: "auto" }}
+          className="object-contain"
+          priority
+        />
+      </a>
     </div>
   );
 };

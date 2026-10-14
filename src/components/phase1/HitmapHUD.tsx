@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { ColorSpectrumResult } from "@/types/hitmap";
 import { VolumeToggle } from "@/components/audio/VolumeToggle";
-import { Flame, Radio, Search, Calendar, ExternalLink, Ticket } from "lucide-react";
+import { Flame, Radio, Search, Calendar, ExternalLink, Ticket, RotateCcw } from "lucide-react";
 
 interface HitmapHUDProps {
   cityName: string;
@@ -19,6 +19,7 @@ interface HitmapHUDProps {
   trackTitle: string;
   trackArtist: string;
   onOpenRSVP: () => void;
+  onRestartGame?: () => void;
   isAllCompleted?: boolean;
 }
 
@@ -35,6 +36,7 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
   trackTitle,
   trackArtist,
   onOpenRSVP,
+  onRestartGame,
   isAllCompleted = false,
 }) => {
   const [showLockedTooltip, setShowLockedTooltip] = useState(false);
@@ -60,7 +62,7 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
     <header className="fixed top-0 inset-x-0 z-30 p-3 sm:p-4 pointer-events-none flex flex-col gap-2.5">
       {/* 1. Top Navigation Bar */}
       <div className="flex items-center justify-between gap-2 pointer-events-auto">
-        {/* Left: bandhunt | taest logo | Level #1 | live icon */}
+        {/* Left: bandhunt | taest logo | Level #1 | live icon | Restart button */}
         <div className="flex items-center gap-2">
           <div className="y2k-sticker px-3 py-1.5 flex items-center gap-2 sm:gap-2.5 bg-white border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C]">
             <Image
@@ -72,14 +74,22 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
               priority
             />
             <div className="h-4 w-[1.5px] bg-[#1C1C1C]/20" />
-            <Image
-              src="/assets/taest-logo-black.png"
-              alt="taest.club"
-              width={70}
-              height={18}
-              className="h-3.5 sm:h-4 w-auto object-contain"
-              priority
-            />
+            <a
+              href="https://taest.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Visit taest.in"
+              className="hover:opacity-75 transition-opacity cursor-pointer inline-flex items-center"
+            >
+              <Image
+                src="/assets/taest-logo-black.png"
+                alt="taest.in"
+                width={70}
+                height={18}
+                className="h-3.5 sm:h-4 w-auto object-contain"
+                priority
+              />
+            </a>
             <div className="h-4 w-[1.5px] bg-[#1C1C1C]/20" />
             <span className="text-[11px] sm:text-xs font-mono font-black uppercase text-[#5D00FF]">
               Level {nodeIndex}
@@ -89,6 +99,20 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF2E9A] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF2E9A]"></span>
             </span>
+
+            {onRestartGame && (
+              <>
+                <div className="h-4 w-[1.5px] bg-[#1C1C1C]/20" />
+                <button
+                  onClick={onRestartGame}
+                  title="Restart hunt from Level 1"
+                  className="py-0.5 px-2 rounded-md bg-gray-100 hover:bg-[#FFE600] active:scale-95 border border-[#1C1C1C] text-[9px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>RESTART</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 

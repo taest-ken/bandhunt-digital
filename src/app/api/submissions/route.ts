@@ -34,21 +34,22 @@ function writeSubmissions(items: PitchSubmission[]) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { suggestedCity, experienceDescription, submittedBy, levelUnlocked, source } = body as PitchSubmission;
+    const contactValue = (body.contact || body.experienceDescription || "").trim();
+    const cityValue = (body.suggestedCity || "Mumbai").trim();
 
-    if (!suggestedCity || !experienceDescription) {
-      return NextResponse.json({ error: "City and contact/experience are required" }, { status: 400 });
+    if (!contactValue) {
+      return NextResponse.json({ error: "Contact (phone number or email) is required" }, { status: 400 });
     }
 
     const currentSubmissions = readSubmissions();
 
     const newSubmission: PitchSubmission = {
-      suggestedCity: suggestedCity.trim(),
-      experienceDescription: experienceDescription.trim(),
-      contact: experienceDescription.trim(),
-      submittedBy: submittedBy?.trim() || "Anonymous Fred Fan",
-      levelUnlocked: typeof levelUnlocked === "number" ? levelUnlocked : undefined,
-      source: source || "bandhunt_web",
+      suggestedCity: cityValue,
+      contact: contactValue,
+      experienceDescription: contactValue,
+      submittedBy: body.submittedBy?.trim() || "Fred Fan",
+      levelUnlocked: typeof body.levelUnlocked === "number" ? body.levelUnlocked : undefined,
+      source: body.source || "bandhunt_web",
       createdAt: new Date().toISOString(),
     };
 

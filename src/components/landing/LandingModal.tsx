@@ -40,25 +40,41 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
         </div>
 
         {/* Action Button & Taped Badge */}
-        <div className="w-full flex flex-col items-center gap-2.5 sm:gap-3 pt-0.5 sm:pt-1 relative">
-          <button
-            onClick={onStart}
-            className="w-full py-3.5 sm:py-4 px-5 sm:px-6 rounded-2xl bg-[#CFFF04] hover:bg-[#bcf000] active:scale-95 text-[#1C1C1C] font-black text-xs sm:text-sm uppercase border-[2.5px] border-[#1C1C1C] shadow-[4px_4px_0px_#1C1C1C] transition-all flex items-center justify-center gap-2 cursor-pointer y2k-btn-bounce"
-          >
-            <Headphones className="w-4 h-4 sm:w-5 sm:h-5 text-[#1C1C1C]" />
-            <span>Grab headphones &amp; start hunting.</span>
-          </button>
+        <div className="w-full flex flex-col items-center gap-2 sm:gap-2.5 pt-1 relative">
+          <div className="relative w-full">
+            <button
+              onClick={onStart}
+              className="w-full py-3.5 sm:py-4 pl-16 sm:pl-20 pr-5 sm:pr-6 rounded-2xl bg-[#CFFF04] hover:bg-[#bcf000] active:scale-95 text-[#1C1C1C] font-black text-[11px] sm:text-xs uppercase border-[2.5px] border-[#1C1C1C] shadow-[4px_4px_0px_#1C1C1C] transition-all flex items-center justify-center relative cursor-pointer y2k-btn-bounce overflow-visible"
+            >
+              {/* Headphone emoji on the badge that the sticker covers */}
+              <span className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/10 flex items-center justify-center text-sm select-none">
+                🎧
+              </span>
+              <span className="whitespace-nowrap tracking-tight">Grab headphones &amp; start hunting.</span>
+            </button>
+
+            {/* Sticker 2: Halftone Headphones - Covers the headphone emoji badge on the left, NEVER covering text */}
+            <div className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 w-18 sm:w-22 h-18 sm:h-22 pointer-events-none rotate-[-12deg] drop-shadow-[4px_4px_0px_#1C1C1C] z-30">
+              <Image
+                src="/assets/stickers/headphones.png"
+                alt="Headphones"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
 
           {/* Taped Yellow Badge "BEST FOR LAPTOP USE" */}
-          <div className="self-center -mt-1 rotate-[-2deg]">
+          <div className="self-center -mt-0.5 rotate-[-2deg]">
             <div className="taped-label text-[10px] sm:text-[11px] font-sans font-black uppercase px-2.5 sm:px-3 py-1 bg-[#FFE600] text-[#1C1C1C] border border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C]">
               ★ BEST FOR LAPTOP USE
             </div>
           </div>
         </div>
 
-        {/* Sticker 1: Handheld Detector - Top-Right (Scaled cleanly on mobile, exact desktop preserved) */}
-        <div className="absolute -top-12 -right-3 sm:-top-24 sm:-right-6 w-24 sm:w-36 h-28 sm:h-50 pointer-events-none rotate-[14deg] drop-shadow-[5px_5px_0px_#1C1C1C] sm:drop-shadow-[8px_8px_0px_#1C1C1C] z-30">
+        {/* Sticker 1: Handheld Detector - Top-Right Corner (Consistent scale, completely clear of text) */}
+        <div className="absolute -top-9 -right-2 sm:-top-11 sm:-right-3 w-20 sm:w-24 h-20 sm:h-24 pointer-events-none rotate-[12deg] drop-shadow-[5px_5px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/detector/body.png"
             alt="Handheld Detector"
@@ -68,19 +84,8 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
           />
         </div>
 
-        {/* Sticker 2: Halftone Headphones - Bottom-Left (Scaled cleanly on mobile, exact desktop preserved) */}
-        <div className="absolute -bottom-6 -left-6 sm:-bottom-13 sm:-left-18 w-28 sm:w-64 h-28 sm:h-64 pointer-events-none rotate-[-8deg] drop-shadow-[5px_5px_0px_#1C1C1C] sm:drop-shadow-[7px_7px_0px_#1C1C1C] z-30">
-          <Image
-            src="/assets/stickers/headphones.png"
-            alt="Headphones"
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
-
-        {/* Sticker 3: Pink Pixel Ticket - Bottom-Right (Scaled cleanly on mobile, exact desktop preserved) */}
-        <div className="absolute -bottom-16 -right-6 sm:-bottom-58 sm:-right-40 w-36 sm:w-96 h-36 sm:h-96 pointer-events-none rotate-[6deg] drop-shadow-[5px_5px_0px_#1C1C1C] sm:drop-shadow-[7px_7px_0px_#1C1C1C] z-30">
+        {/* Sticker 3: Pink Pixel Ticket - Bottom-Right Corner (Consistent scale, completely clear of text) */}
+        <div className="absolute -bottom-5 -right-4 sm:-bottom-6 sm:-right-5 w-20 sm:w-24 h-16 sm:h-20 pointer-events-none rotate-[10deg] drop-shadow-[4px_4px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/stickers/stickers.png"
             alt="Ticket"

@@ -59,27 +59,6 @@ export const Phase2PerimeterDoodle: React.FC = () => {
           <polygon points="0,-10 3,-3 10,-3 4,2 6,9 0,5 -6,9 -4,2 -10,-3 -3,-3" fill="#FF2E9A" stroke="#1C1C1C" strokeWidth="2" />
         </g>
       </svg>
-
-      {/* Inside Perimeter: Starting Meetup Point Animation (Paagal Pan Bhandaar) */}
-      <div className="absolute flex flex-col items-center animate-sticker-bounce pointer-events-auto">
-        {/* Animated Meetup Pin */}
-        <div className="relative flex items-center justify-center">
-          <div className="w-14 h-14 rounded-full bg-[#FF2E9A] opacity-60 animate-ping absolute" />
-          <div className="w-12 h-12 rounded-full bg-[#CFFF04] border-[3px] border-[#1C1C1C] shadow-sticker flex items-center justify-center text-xl cursor-pointer">
-            📍
-          </div>
-        </div>
-
-        {/* Meetup Sticker Tag */}
-        <div className="taped-label text-[11px] px-3 py-1 rounded-xl bg-[#FFFFFF] border-2 border-[#1C1C1C] shadow-sticker text-[#1C1C1C] mt-2 flex items-center gap-1.5 whitespace-nowrap">
-          <span className="w-2 h-2 rounded-full bg-[#FF2E9A] animate-pulse" />
-          <span>START / MEETUP BASE: PAAGAL PAN BHANDAAR</span>
-        </div>
-
-        <span className="text-[9px] font-sans font-black bg-[#1C1C1C] text-white px-2 py-0.5 rounded-full mt-1 uppercase tracking-wider">
-          ACTIVE SEARCH PERIMETER (BANDRA WEST)
-        </span>
-      </div>
     </div>
   );
 };

@@ -17,9 +17,35 @@ function readSubmissions(): PitchSubmission[] {
   return [];
 }
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "taest2026";
+
+function checkAuth(request: Request): boolean {
+  const { searchParams } = new URL(request.url);
+  const headerPwd = request.headers.get("x-admin-password");
+  const queryPwd = searchParams.get("pwd");
+  return headerPwd === ADMIN_PASSWORD || queryPwd === ADMIN_PASSWORD;
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    if (body.password === ADMIN_PASSWORD) {
+      return NextResponse.json({ success: true });
+    }
+    return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+}
+
 export async function GET(request: Request) {
+  if (!checkAuth(request)) {
+    return NextResponse.json({ error: "Unauthorized access: Founder password required" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const format = searchParams.get("format");
+  const pwd = searchParams.get("pwd") || request.headers.get("x-admin-password") || "";
   const submissions = readSubmissions();
 
   if (format === "csv") {
@@ -58,6 +84,6 @@ export async function GET(request: Request) {
     totalCount: submissions.length,
     cityCounts,
     submissions,
-    downloadCsvUrl: "/api/admin/rsvps?format=csv",
+    downloadCsvUrl: `/api/admin/rsvps?format=csv&pwd=${encodeURIComponent(pwd)}`,
   });
 }

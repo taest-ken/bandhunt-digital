@@ -11,6 +11,7 @@ interface PhysicalDropRSVPModalProps {
 
 export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ onClose }) => {
   const [contact, setContact] = useState("");
+  const [selectedCity, setSelectedCity] = useState("Mumbai");
   const [submitted, setSubmitted] = useState(false);
   const [registeredCount, setRegisteredCount] = useState(21);
 
@@ -35,7 +36,8 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          suggestedCity: "Mumbai",
+          suggestedCity: selectedCity,
+          contact: contact.trim(),
           experienceDescription: contact.trim(),
           submittedBy: "Offline Bandhunt RSVP",
           source: "offline_bandhunt_modal",
@@ -136,39 +138,71 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <div className="flex justify-between text-[9px] font-mono text-gray-500">
+            <div className="flex justify-start text-[9px] font-mono text-gray-500">
               <span>Demand Accelerating</span>
-              <span>Slots Exhausting Rapidly</span>
             </div>
           </div>
         </div>
 
         {/* Form or Confirmation */}
         {submitted ? (
-          <div className="bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-full py-2.5 px-4 text-center flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
-            <CheckCircle2 className="w-4 h-4 text-[#1C1C1C]" />
-            <span className="text-xs font-black uppercase text-[#1C1C1C]">
-              YOU&apos;RE ON THE TAEST INVITE LIST! 🎉
-            </span>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="w-full bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-full py-2.5 px-4 text-center flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+              <CheckCircle2 className="w-4 h-4 text-[#1C1C1C]" />
+              <span className="text-xs font-black uppercase text-[#1C1C1C]">
+                YOU&apos;RE ON THE TAEST INVITE LIST! 🎉
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSubmitted(false);
+                setContact("");
+              }}
+              className="text-[10px] font-mono font-bold text-gray-500 hover:text-black underline cursor-pointer"
+            >
+              + Register another number / email
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <label className="text-[10px] font-black uppercase text-[#1C1C1C] flex items-center gap-1.5">
-              <Bell className="w-3.5 h-3.5 text-[#FF2E9A]" />
-              <span>CLAIM INVITATION PASS:</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black uppercase text-[#1C1C1C] flex items-center gap-1.5">
+                <Bell className="w-3.5 h-3.5 text-[#FF2E9A]" />
+                <span>CHOOSE CITY &amp; CLAIM PASS:</span>
+              </label>
+
+              {/* City Selection Pills */}
+              <div className="flex items-center gap-1">
+                {["Mumbai", "Delhi", "Bengaluru"].map((city) => (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => setSelectedCity(city)}
+                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border border-[#1C1C1C] cursor-pointer transition-colors ${
+                      selectedCity === city
+                        ? "bg-[#5D00FF] text-white shadow-[1px_1px_0px_#1C1C1C]"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <input
                 type="text"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
-                placeholder="WhatsApp number or Email..."
+                placeholder={`WhatsApp number or email for ${selectedCity}...`}
                 required
                 className="flex-1 px-3.5 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-bold text-[#1C1C1C] placeholder-gray-400 focus:outline-none"
               />
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-[#CFFF04] hover:bg-[#b8e600] text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] cursor-pointer whitespace-nowrap"
+                className="px-4 py-2 rounded-xl bg-[#CFFF04] hover:bg-[#b8e600] text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] cursor-pointer whitespace-nowrap active:scale-95"
               >
                 RSVP NOW
               </button>
