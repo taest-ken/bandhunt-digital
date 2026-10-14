@@ -34,8 +34,8 @@ export const BrandCollabLogo: React.FC<BrandCollabLogoProps> = ({
         priority
       />
 
-      {/* Comic Cross / X Collab Divider */}
-      <span className="font-mono font-black text-xs sm:text-sm text-[#1C1C1C] px-1 py-0.2 rounded bg-[#CFFF04] border border-[#1C1C1C] shadow-[1px_1px_0px_#1C1C1C] leading-none">
+      {/* Clean Collab Cross Divider without neon green background */}
+      <span className="font-mono font-black text-xs sm:text-sm text-[#1C1C1C] px-0.5 leading-none select-none">
         ✕
       </span>
 

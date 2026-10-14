@@ -3,9 +3,33 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Fred's India Tour Before The India Tour // THE HITMAP",
-  description: "An episodic digital scavenger hunt across India powered by beats and basslines. Drag the compass, listen to the music, track down Fred before the real tour drops.",
+  description: "An episodic digital scavenger hunt across India powered by beats and basslines. Move Fred, follow the beat, find the last seen location of fredagain India tour bands.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/assets/stickers/site_icon.png",
+    shortcut: "/assets/stickers/site_icon.png",
+    apple: "/assets/stickers/site_icon.png",
+  },
+  openGraph: {
+    title: "Fred's India Tour Before The India Tour // THE HITMAP",
+    description: "An episodic digital scavenger hunt across India powered by beats and basslines. Move Fred, follow the beat, find the last seen location of fredagain India tour bands.",
+    url: "https://bandhunt.taest.in",
+    siteName: "Bandhunt by taest.club",
+    images: [
+      {
+        url: "/assets/stickers/site_icon.png",
+        width: 512,
+        height: 512,
+        alt: "Bandhunt by taest.club",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Fred's India Tour Before The India Tour // THE HITMAP",
+    description: "An episodic digital scavenger hunt across India powered by beats and basslines. Move Fred, follow the beat, find the last seen location of fredagain India tour bands.",
+    images: ["/assets/stickers/site_icon.png"],
   },
 };
 

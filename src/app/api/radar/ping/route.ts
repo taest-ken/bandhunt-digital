@@ -48,6 +48,7 @@ export async function POST(request: Request) {
       jitter: parseFloat(jitter.toFixed(1)),
       zone,
       verified: isLockedIn,
+      distanceMeters: Math.round(distanceMeters),
     };
 
     if (isLockedIn) {

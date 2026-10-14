@@ -172,112 +172,91 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
   else if (proximity >= 0.35) distanceHint = "WARMING UP (~800m)";
   else if (proximity >= 0.15) distanceHint = "SIGNAL DETECTED (~1.8km)";
 
+  // Track previous proximity to detect whether player is moving closer or farther
+  const prevProximityRef = useRef(proximity);
+  const [isGettingCloser, setIsGettingCloser] = useState(false);
+
+  useEffect(() => {
+    const diff = proximity - prevProximityRef.current;
+    if (Math.abs(diff) > 0.001) {
+      setIsGettingCloser(diff >= 0);
+      prevProximityRef.current = proximity;
+    }
+  }, [proximity]);
+
+  // Determine whether Fred is smiling or sad
+  // If locked in -> Always Happy!
+  // If dragging -> Happy when getting closer (or in high proximity >= 0.7), Sad when moving away
+  // If idle -> Happy if warm/hot (>= 0.55), Sad if cold (< 0.55)
+  const isHappy = isLockedIn || (isDragging ? isGettingCloser || proximity >= 0.7 : proximity >= 0.55);
+
   return (
     <div className="relative flex flex-col items-center select-none touch-none">
-      {/* Handheld Device Container */}
+      {/* Fred Avatar Interactive Container */}
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
-        className={`relative w-[84px] h-[187px] sm:w-[94px] sm:h-[209px] cursor-grab active:cursor-grabbing transition-transform select-none ${
+        className={`relative w-24 h-24 sm:w-28 sm:h-28 cursor-grab active:cursor-grabbing transition-transform select-none ${
           isLockedIn
-            ? "cursor-pointer animate-pulse"
+            ? "cursor-pointer animate-bounce"
             : isDragging
-            ? "scale-105 drop-shadow-[5px_5px_0px_#1C1C1C]"
-            : "hover:scale-102 drop-shadow-[4px_4px_0px_#1C1C1C]"
+            ? "scale-110 drop-shadow-[7px_7px_0px_#1C1C1C]"
+            : "hover:scale-105 drop-shadow-[5px_5px_0px_#1C1C1C]"
         }`}
         style={{
           transform: !isLockedIn
-            ? `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.12}deg)`
+            ? `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.15}deg)`
             : undefined,
           transition: isDragging ? "none" : "transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
       >
-        {/* Unified Pixel Art Device Body */}
-        <Image
-          src="/assets/detector/body.png"
-          alt="Handheld Detector"
-          fill
-          className={`object-contain pointer-events-none transition-all ${
-            isLockedIn ? "brightness-110" : ""
-          }`}
-          priority
+        {/* 1. Full 360° Concentric Color-Changing Sonar Radar Rings around Fred */}
+        <div
+          className="absolute -inset-4 rounded-full border-2 animate-ping opacity-60 pointer-events-none"
+          style={{ borderColor: ledColor }}
+        />
+        <div
+          className="absolute -inset-8 rounded-full border animate-pulse opacity-30 pointer-events-none"
+          style={{ borderColor: ledColor }}
+        />
+        <div
+          className="absolute -inset-3 rounded-full transition-all duration-300 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle, ${ledColor}44 0%, rgba(0,0,0,0) 70%)`,
+          }}
         />
 
-        {/* 1. Directional Heading Beacon (Positioned floating directly above antenna tip) */}
+        {/* 2. Directional Heading Compass Beacon (Sitting directly on Fred's cap) */}
         <div
-          className="absolute -top-5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-30 shadow-[1px_1px_0px_#1C1C1C] border border-[#FFE600]/40"
+          className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#1C1C1C] flex items-center justify-center pointer-events-none z-30 shadow-[1.5px_1.5px_0px_#1C1C1C] border border-[#FFE600]/80"
           title="Direction to target"
         >
           <Navigation
-            className="w-2.5 h-2.5 text-[#CFFF04] transition-transform duration-200"
+            className="w-3.5 h-3.5 text-[#CFFF04] transition-transform duration-150 ease-out"
             style={{
-              transform: `rotate(${bearing}deg)`,
+              transform: `rotate(${bearing + jitterAngle}deg)`,
             }}
           />
         </div>
 
-        {/* 2. GLOWING DOT & COLOR-CHANGING SONAR RADAR PULSE ON THE ANTENNA TIP */}
-        <div className="absolute top-[4.7%] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-30">
-          {/* Concentric Expanding Pulsing Sonar Waves */}
-          <div
-            className="absolute w-7 h-7 rounded-full border-2 animate-ping opacity-60"
-            style={{ borderColor: ledColor }}
+        {/* 3. Animated Pixel Art Fred Face (Happy vs Sad) */}
+        <div className="relative w-full h-full rounded-2xl overflow-visible pointer-events-none">
+          <Image
+            src={isHappy ? "/assets/stickers/happy_fred.png" : "/assets/stickers/sad_fred.png"}
+            alt={isHappy ? "Happy Fred" : "Sad Fred"}
+            fill
+            className={`object-contain transition-transform duration-200 ${
+              isLockedIn ? "scale-105" : ""
+            }`}
+            priority
           />
-          <div
-            className="absolute w-12 h-12 rounded-full border animate-pulse opacity-30"
-            style={{ borderColor: ledColor }}
-          />
-
-          {/* Radial Light Glow around antenna tip */}
-          <div
-            className="absolute w-7 h-7 rounded-full transition-all duration-300 opacity-70 pointer-events-none"
-            style={{
-              background: `radial-gradient(circle, ${ledColor} 0%, rgba(0,0,0,0) 70%)`,
-            }}
-          />
-
-          {/* Physical Glowing LED Dot Overlapping Antenna Tip */}
-          <div
-            className="w-2.5 h-2.5 rounded-full border border-[#1C1C1C] transition-all duration-300"
-            style={{
-              backgroundColor: ledColor,
-              boxShadow: ledShadow,
-            }}
-          />
-        </div>
-
-        {/* 3. Analog Gauge: Needle Pivoting from Black Semicircle at Bottom of Screen Dial */}
-        <div className="absolute top-[52.1%] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 flex items-center justify-center">
-          {/* Rotating Needle Arm */}
-          <div
-            className="absolute bottom-0 w-0.5 h-[18px] sm:h-[20px] origin-bottom transition-transform duration-75 ease-out"
-            style={{
-              transform: `rotate(${needleAngle}deg)`,
-            }}
-          >
-            {/* Needle shaft */}
-            <div
-              className={`w-full h-full rounded-t-full transition-colors ${
-                isLockedIn
-                  ? "bg-[#FF0040] shadow-[0_0_6px_#FF0040]"
-                  : proximity > 0.7
-                  ? "bg-[#FF8A00]"
-                  : "bg-[#1C1C1C]"
-              }`}
-            />
-            {/* Red tip */}
-            <div className="absolute top-0 inset-x-0 h-1.5 bg-[#FF0040] rounded-t-full" />
-          </div>
-
-          {/* Pivot cap seated directly on the printed black semicircle */}
-          <div className="w-2.5 h-2.5 rounded-full bg-[#1C1C1C] border border-[#FFE600]/60 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
         </div>
       </div>
 
-      {/* Floating Status & Directional Clue Bar Under the Device */}
-      <div className="mt-2 flex flex-col items-center gap-1 pointer-events-none">
+      {/* Floating Status & Directional Clue Bar Under Fred */}
+      <div className="mt-2.5 flex flex-col items-center gap-1 pointer-events-none">
         <div
-          className={`taped-label text-[10px] sm:text-[11px] font-black uppercase px-3 py-1 border border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] transition-all ${
+          className={`taped-label text-[10px] sm:text-[11px] font-black uppercase px-3.5 py-1 border border-[#1C1C1C] shadow-[2.5px_2.5px_0px_#1C1C1C] transition-all ${
             isLockedIn
               ? "bg-[#FF0040] text-white animate-pulse"
               : isDragging
@@ -286,14 +265,14 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
           }`}
         >
           {isLockedIn
-            ? "BAND FREQUENCY LOCKED! TAP TO REVEAL"
+            ? "LOCATION LOCKED! TAP TO REVEAL"
             : isDragging
-            ? "DRAGGING DETECTOR // SWEEPING CITY..."
-            : "DRAG DETECTOR ACROSS MAP TO SEARCH"}
+            ? "MOVING FRED // SEARCHING CITY..."
+            : "DRAG FRED ACROSS MAP TO SEARCH"}
         </div>
 
         {/* Direction & Distance Hint */}
-        <div className="flex items-center gap-1.5 text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-full bg-white/90 border border-[#1C1C1C] text-[#1C1C1C] shadow-sm">
+        <div className="flex items-center gap-1.5 text-[9px] font-mono font-black uppercase px-2.5 py-0.5 rounded-full bg-white/95 border border-[#1C1C1C] text-[#1C1C1C] shadow-sm">
           <span
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: ledColor }}

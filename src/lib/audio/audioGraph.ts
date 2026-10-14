@@ -202,7 +202,7 @@ class HitmapAudioEngine {
     if (this.isMuted) {
       this.masterGainNode.gain.setTargetAtTime(0.0, now, 0.05);
     } else if (this.isDucked) {
-      this.masterGainNode.gain.setTargetAtTime(0.08, now, 0.08); // Ducked for video playback
+      this.masterGainNode.gain.setTargetAtTime(0.02, now, 0.08); // Deeply ducked for crystal-clear video audio
     } else {
       this.masterGainNode.gain.setTargetAtTime(0.85, now, 0.08);
     }

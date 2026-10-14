@@ -29,7 +29,7 @@ export const WaitingRoomHUD: React.FC<WaitingRoomHUDProps> = ({
   };
 
   return (
-    <div className="fixed inset-y-0 right-4 sm:right-12 md:right-28 lg:right-44 xl:right-56 z-30 pointer-events-none flex flex-col justify-center max-w-[calc(100vw-2rem)] sm:max-w-md w-full">
+    <div className="fixed inset-y-0 right-4 sm:right-16 md:right-32 lg:right-48 xl:right-64 z-30 pointer-events-none flex flex-col justify-center max-w-[calc(100vw-2rem)] sm:max-w-md w-full">
       <div className="w-full bg-white border-[3.5px] border-[#1C1C1C] rounded-3xl p-5 md:p-6 text-center flex flex-col items-center gap-3.5 shadow-[6px_6px_0px_#1C1C1C] pointer-events-auto relative max-h-[92vh] overflow-y-auto my-auto">
         {/* Top Header: Centered BrandCollabLogo */}
         <div className="flex flex-col items-center gap-2.5 border-b-2 border-[#1C1C1C]/15 pb-3 w-full">
@@ -43,13 +43,10 @@ export const WaitingRoomHUD: React.FC<WaitingRoomHUDProps> = ({
           </div>
         </div>
 
-        {/* Exact Specification Story Copy - Center-aligned with distinct line breaks */}
-        <div className="flex flex-col gap-2.5 text-center bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 w-full shadow-inner">
-          <p className="text-xs sm:text-[13px] font-bold text-gray-800 leading-snug text-center">
-            Fans of fredagain came together and stashed secret india tour bands across the city.
-          </p>
-          <p className="text-xs sm:text-[13px] font-bold text-gray-800 leading-snug text-center">
-            4 winners, solved the clues, paired up and hunted these bands in pair.
+        {/* Exact Specification Story Copy - Single Paragraph */}
+        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 w-full shadow-inner">
+          <p className="text-xs sm:text-[13px] font-bold text-gray-800 leading-normal text-center">
+            Fans of fredagain came together and stashed secret India tour bands across the city. 4 winners, solved the clues, paired up and hunted these bands.
           </p>
         </div>
 

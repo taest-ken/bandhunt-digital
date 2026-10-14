@@ -2,12 +2,18 @@
 
 import React from "react";
 import { BrandCollabLogo } from "@/components/ui/BrandCollabLogo";
+import { VolumeToggle } from "@/components/audio/VolumeToggle";
 
 export const StreetLockdownBanner: React.FC = () => {
   return (
-    <div className="w-full flex flex-col items-center pointer-events-auto">
+    <div className="w-full flex flex-col items-center pointer-events-auto relative">
       {/* Top Playful Comic Hazard Bar */}
       <div className="w-full h-2.5 bg-[#FF2E9A] border-b-2 border-[#1C1C1C]" />
+
+      {/* Floating Volume/Mute Button on top right */}
+      <div className="absolute top-4 right-4 sm:right-8 z-30">
+        <VolumeToggle />
+      </div>
 
       {/* Main Alert Banner - Form-fitted to content without excess whitespace */}
       <div className="w-fit max-w-xl mx-auto bg-white px-6 py-3.5 sm:px-8 sm:py-4 mt-2 flex flex-col items-center justify-center text-center gap-2 shadow-[6px_6px_0px_#1C1C1C] border-[3.5px] border-[#1C1C1C] rounded-2xl">

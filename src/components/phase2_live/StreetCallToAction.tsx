@@ -15,15 +15,15 @@ export const StreetCallToAction: React.FC = () => {
           COMMUNITY MISSION // TIME CRITICAL
         </span>
         <h3 className="text-base sm:text-lg font-black font-sans text-[#1C1C1C] uppercase tracking-tight leading-tight">
-          PUT THE PHONE IN YOUR POCKET &amp; RUN!
+          OFFLINE BANDHUNT ARCHIVE
         </h3>
-        <p className="text-xs font-sans text-gray-700 font-bold leading-normal">
-          Wristbands are taped behind lampposts, tea stalls, and iconic street corners near Asiatic Society Library right now. If you&apos;re staring at this screen, you&apos;re already missing them!
+        <p className="text-xs sm:text-[13px] font-sans text-gray-800 font-bold leading-normal text-center">
+          Fans of fredagain came together and stashed secret India tour bands across the city. 4 winners, solved the clues, paired up and hunted these bands.
         </p>
       </div>
 
-      <div className="w-full py-3 px-4 rounded-2xl bg-[#CFFF04] hover:bg-[#b8e600] font-sans text-xs font-black text-[#1C1C1C] tracking-wider uppercase border-2 border-[#1C1C1C] shadow-sticker y2k-btn-bounce cursor-pointer flex items-center justify-center gap-2">
-        <span>LOCK SCREEN &amp; HIT THE STREETS 🚀</span>
+      <div className="w-full py-3 px-4 rounded-2xl bg-gray-100 font-sans text-xs font-black text-gray-700 tracking-wider uppercase border-2 border-[#1C1C1C] shadow-sm flex items-center justify-center gap-2 select-none cursor-default">
+        <span>MISSION ACCOMPLISHED // ALL BANDS CLAIMED 🏁</span>
       </div>
     </div>
   );

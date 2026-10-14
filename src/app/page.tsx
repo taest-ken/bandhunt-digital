@@ -47,6 +47,15 @@ export default function HitmapApp() {
   const [hasDismissedReward, setHasDismissedReward] = useState(false);
   const [showRecapModal, setShowRecapModal] = useState(false);
   const [showRSVPModal, setShowRSVPModal] = useState(false);
+  const [selectedPastLevelIndex, setSelectedPastLevelIndex] = useState<number | null>(null);
+
+  // Level Timer Persistence: recorded on first reveal of node, does not reset on modal close
+  const [levelTimerStartMs, setLevelTimerStartMs] = useState<number | undefined>(undefined);
+
+  // 250m Proximity auto-dismissing toast
+  const [showProximityToast, setShowProximityToast] = useState(false);
+  const hasShownToastForLevelRef = useRef<number | null>(null);
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Level Progression: 0..5 index corresponding to Level 1..6
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
@@ -56,6 +65,49 @@ export default function HitmapApp() {
   }, [currentLevelIndex]);
 
   const [completedLevels, setCompletedLevels] = useState<number[]>([]);
+
+  // Restore progression from localStorage on initial load
+  useEffect(() => {
+    try {
+      const savedLvl = localStorage.getItem("bandhunt_level");
+      if (savedLvl !== null) {
+        const parsedLvl = parseInt(savedLvl, 10);
+        if (!isNaN(parsedLvl) && parsedLvl >= 0 && parsedLvl < 6) {
+          setCurrentLevelIndex(parsedLvl);
+          currentLevelIndexRef.current = parsedLvl;
+        }
+      }
+      const savedCompleted = localStorage.getItem("bandhunt_completed");
+      if (savedCompleted) {
+        const parsedComp = JSON.parse(savedCompleted);
+        if (Array.isArray(parsedComp)) {
+          setCompletedLevels(parsedComp);
+        }
+      }
+      const savedTimer = localStorage.getItem("bandhunt_timer_start");
+      if (savedTimer) {
+        const parsedTimer = parseInt(savedTimer, 10);
+        if (!isNaN(parsedTimer)) {
+          setLevelTimerStartMs(parsedTimer);
+        }
+      }
+    } catch (e) {
+      console.warn("Error restoring bandhunt local progress:", e);
+    }
+  }, []);
+
+  // Save changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("bandhunt_level", String(currentLevelIndex));
+    } catch {}
+  }, [currentLevelIndex]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("bandhunt_completed", JSON.stringify(completedLevels));
+    } catch {}
+  }, [completedLevels]);
 
   // Ping Throttle
   const lastPingTimeRef = useRef<number>(0);
@@ -128,6 +180,23 @@ export default function HitmapApp() {
           // Update Web Audio DSP lowpass filter and gain
           const engine = getHitmapAudioEngine();
           engine.updateProximity(data.proximity);
+
+          // 250m Proximity auto-dismissing toast (triggers once per level approach)
+          if (
+            data.distanceMeters &&
+            data.distanceMeters <= 250 &&
+            data.distanceMeters > 25 &&
+            !data.verified
+          ) {
+            if (hasShownToastForLevelRef.current !== targetLevel) {
+              hasShownToastForLevelRef.current = targetLevel;
+              setShowProximityToast(true);
+              if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+              toastTimerRef.current = setTimeout(() => {
+                setShowProximityToast(false);
+              }, 4500);
+            }
+          }
         }
       } catch (e) {
         console.error("Error pinging radar oracle:", e);
@@ -162,6 +231,11 @@ export default function HitmapApp() {
     setVelocity({ vx: 0, vy: 0 });
     setHasDismissedReward(false);
     setShowRewardModal(false);
+    setSelectedPastLevelIndex(null);
+    setShowProximityToast(false);
+    hasShownToastForLevelRef.current = null;
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+
     setRadar({
       proximity: 0.05,
       bearing: 42,
@@ -190,6 +264,16 @@ export default function HitmapApp() {
     setCompletedLevels((prev) => Array.from(new Set([...prev, currentLevelIndex + 1])));
     setShowRewardModal(false);
     setHasDismissedReward(false);
+    setSelectedPastLevelIndex(null);
+    setShowProximityToast(false);
+    hasShownToastForLevelRef.current = null;
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+
+    // Reset level timer for the new level
+    setLevelTimerStartMs(undefined);
+    try {
+      localStorage.removeItem("bandhunt_timer_start");
+    } catch {}
 
     const nextNode = TOUR_NODES[nextIdx];
     console.log(
@@ -228,15 +312,34 @@ export default function HitmapApp() {
   // Continuous 60fps Color Spectrum
   const spectrum = getProximityColorSpectrum(radar.proximity);
 
-  // Velocity change from Handheld Detector
+  // Velocity change from Handheld Detector with 50m magnetic lock
   const handleVelocityChange = useCallback((vx: number, vy: number) => {
     if (radar.verified) {
       // Freeze movement when frequency lock-in reached
       setVelocity({ vx: 0, vy: 0 });
       return;
     }
+
+    // 50m Magnetic lock: gently bias joystick velocity towards target coordinates
+    if (
+      radar.distanceMeters &&
+      radar.distanceMeters <= 50 &&
+      radar.distanceMeters > 20 &&
+      (vx !== 0 || vy !== 0)
+    ) {
+      const angleRad = (radar.bearing * Math.PI) / 180;
+      const pullX = Math.sin(angleRad);
+      const pullY = -Math.cos(angleRad);
+      const speed = Math.hypot(vx, vy);
+      const pullFactor = 0.55;
+      const magneticVx = vx * (1 - pullFactor) + pullX * speed * pullFactor;
+      const magneticVy = vy * (1 - pullFactor) + pullY * speed * pullFactor;
+      setVelocity({ vx: magneticVx, vy: magneticVy });
+      return;
+    }
+
     setVelocity({ vx, vy });
-  }, [radar.verified]);
+  }, [radar.verified, radar.distanceMeters, radar.bearing]);
 
   // Handle landing start
   const handleLandingStart = async () => {
@@ -271,6 +374,11 @@ export default function HitmapApp() {
         initialCenter={currentCoord}
         resetCoord={resetCoord}
         currentLevelIndex={currentLevelIndex}
+        completedLevels={completedLevels}
+        onSelectPastNode={(idx) => {
+          setSelectedPastLevelIndex(idx);
+          setShowRewardModal(true);
+        }}
         velocity={velocity}
         onCenterChange={handleCenterChange}
         isLockedIn={radar.verified}
@@ -278,6 +386,28 @@ export default function HitmapApp() {
         activePhase={activePhase}
         meetupCoordinates={schedule?.meetupCoordinates}
       />
+
+      {/* 250m Proximity Notification Toast */}
+      {showProximityToast && !radar.verified && (
+        <div className="fixed top-28 sm:top-32 inset-x-0 z-40 flex justify-center pointer-events-none px-4 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div
+            onClick={() => setShowProximityToast(false)}
+            className="pointer-events-auto cursor-pointer bg-[#FFE600] text-[#1C1C1C] border-[3px] border-[#1C1C1C] rounded-2xl px-4 py-2.5 shadow-[4px_4px_0px_#1C1C1C] flex items-center gap-2.5 font-sans font-black text-xs sm:text-sm uppercase tracking-wide transition-transform hover:scale-105 active:scale-95"
+          >
+            <span className="text-base">🔍</span>
+            <span>ZOOM IN TO PINPOINT! FRED IS WITHIN 250M!</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowProximityToast(false);
+              }}
+              className="ml-2 w-5 h-5 rounded-full bg-[#1C1C1C] text-white flex items-center justify-center text-[10px] font-bold hover:bg-black"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 4. Ambient Radar Sweeps */}
       {activePhase === "PHASE_2_LIVE" && <AmbientRadarSweep mode="crimson" />}
@@ -320,12 +450,21 @@ export default function HitmapApp() {
                 schedule.currentNode.discoveryQuote
               }
               onReveal={() => {
+                if (!levelTimerStartMs && currentLevelIndex < 5) {
+                  const now = Date.now();
+                  setLevelTimerStartMs(now);
+                  try {
+                    localStorage.setItem("bandhunt_timer_start", String(now));
+                  } catch {}
+                }
+                setSelectedPastLevelIndex(null);
+                setHasDismissedReward(false);
                 setShowRewardModal(true);
               }}
             />
           )}
 
-          {/* Handheld Detector (Yellow geiger body, antenna LED, live needle -48° to +48°, 5 status LEDs) */}
+          {/* Handheld Detector with Fred's animated pixel face (Happy/Sad) */}
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto">
             <HandheldDetector
               proximity={radar.proximity}
@@ -334,6 +473,14 @@ export default function HitmapApp() {
               isLockedIn={radar.verified}
               onVelocityChange={handleVelocityChange}
               onTapUnlock={() => {
+                if (!levelTimerStartMs && currentLevelIndex < 5) {
+                  const now = Date.now();
+                  setLevelTimerStartMs(now);
+                  try {
+                    localStorage.setItem("bandhunt_timer_start", String(now));
+                  } catch {}
+                }
+                setSelectedPastLevelIndex(null);
                 setHasDismissedReward(false);
                 setShowRewardModal(true);
               }}
@@ -379,31 +526,47 @@ export default function HitmapApp() {
       )}
 
       {/* 6. Modals */}
-      {/* 6.1 Node Unlocked Reward Modal (Pages 4-9 in k.pdf) */}
-      {showRewardModal && radar.nodeReward && schedule && (
-        <RewardModal
-          spotNumber={radar.nodeReward.spotNumber || schedule.currentNode.spotNumber || 1}
-          targetName={radar.nodeReward.targetName}
-          locationName={radar.nodeReward.locationName}
-          catchphrase={radar.nodeReward.catchphrase}
-          clueText={radar.nodeReward.clueText}
-          storyTitle={radar.nodeReward.storyTitle}
-          imageUrl={radar.nodeReward.imageUrl}
-          videoLoopUrl={radar.nodeReward.videoLoopUrl || schedule.currentNode.videoLoopUrl}
-          isFinalNode={radar.nodeReward.isFinalNode}
-          timeRemainingMs={schedule.timeRemainingInNodeMs}
-          onClose={() => {
-            setShowRewardModal(false);
-            setHasDismissedReward(true);
-          }}
-          onHuntAgain={handleHuntAgain}
-          onNextLevel={handleNextLevel}
-          onOpenRSVP={() => {
-            setShowRewardModal(false);
-            setShowRSVPModal(true);
-          }}
-        />
-      )}
+      {/* 6.1 Node Unlocked Reward Modal (Active unlocked node OR past node without next-level component) */}
+      {showRewardModal && schedule && (() => {
+        const pastNode = selectedPastLevelIndex !== null ? TOUR_NODES[selectedPastLevelIndex] : null;
+        const activeNode = radar.nodeReward || TOUR_NODES[currentLevelIndex];
+        const displayNode = pastNode || activeNode;
+        const isPast = pastNode !== null;
+
+        if (!displayNode) return null;
+
+        return (
+          <RewardModal
+            spotNumber={displayNode.spotNumber || 1}
+            targetName={displayNode.targetName}
+            locationName={displayNode.locationName}
+            catchphrase={displayNode.catchphrase}
+            clueText={displayNode.clueText}
+            storyTitle={displayNode.storyTitle}
+            imageUrl={displayNode.imageUrl}
+            videoLoopUrl={displayNode.videoLoopUrl || schedule.currentNode.videoLoopUrl}
+            isFinalNode={displayNode.isFinalNode}
+            isPastNode={isPast}
+            levelTimerStartMs={isPast ? undefined : levelTimerStartMs}
+            timeRemainingMs={schedule.timeRemainingInNodeMs}
+            onClose={() => {
+              setShowRewardModal(false);
+              if (isPast) {
+                setSelectedPastLevelIndex(null);
+              } else {
+                setHasDismissedReward(true);
+              }
+            }}
+            onHuntAgain={handleHuntAgain}
+            onNextLevel={handleNextLevel}
+            onOpenRSVP={() => {
+              setShowRewardModal(false);
+              setSelectedPastLevelIndex(null);
+              setShowRSVPModal(true);
+            }}
+          />
+        );
+      })()}
 
       {/* 6.2 Phase 1 / Spot #6 Physical Bandhunt RSVP Modal (Page 10 in k.pdf) */}
       {showRSVPModal && (
@@ -431,7 +594,7 @@ export default function HitmapApp() {
           <span>Follow IG</span>
         </a>
         <a
-          href="https://whatsapp.com/channel/0029Va9y6XU0VycF8v8R6D1O"
+          href="https://chat.whatsapp.com/EM12Mf0PE6J007pdF1w1Ne?s=cl&p=a&mlu=4&ilr=4"
           target="_blank"
           rel="noopener noreferrer"
           className="py-1.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] border-2 border-[#1C1C1C] shadow-[2.5px_2.5px_0px_#1C1C1C] text-[10px] font-sans font-black uppercase text-white flex items-center gap-1.5 transition-all cursor-pointer"

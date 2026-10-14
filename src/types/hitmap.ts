@@ -81,6 +81,7 @@ export interface RadarPingResponse {
   jitter: number; // degrees of wobble
   zone: 'COLD' | 'DETECTING' | 'WARM' | 'HOT' | 'LOCK_IN';
   verified: boolean;
+  distanceMeters?: number;
   unlockToken?: string;
   nodeReward?: {
     spotNumber: number;
@@ -110,6 +111,9 @@ export interface ColorSpectrumResult {
 export interface PitchSubmission {
   suggestedCity: string;
   experienceDescription: string;
+  contact?: string;
   submittedBy?: string;
+  levelUnlocked?: number;
+  source?: string;
   createdAt?: string;
 }

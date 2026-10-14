@@ -34,6 +34,8 @@ interface RewardModalProps {
   imageUrl?: string;
   videoLoopUrl?: string;
   isFinalNode?: boolean;
+  isPastNode?: boolean;
+  levelTimerStartMs?: number;
   timeRemainingMs: number;
   onClose: () => void;
   onNextLevel?: () => void;
@@ -51,13 +53,39 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   imageUrl,
   videoLoopUrl,
   isFinalNode = false,
+  isPastNode = false,
+  levelTimerStartMs,
   timeRemainingMs,
   onClose,
   onNextLevel,
   onHuntAgain,
   onOpenRSVP,
 }) => {
-  const [secondsLeft, setSecondsLeft] = useState(59);
+  // Compute remaining countdown seconds based on when this node was first unlocked
+  const computeRemaining = () => {
+    if (isPastNode || spotNumber >= 6 || isFinalNode) return 0;
+    if (!levelTimerStartMs) return 59;
+    const elapsedSec = Math.floor((Date.now() - levelTimerStartMs) / 1000);
+    return Math.max(0, 59 - elapsedSec);
+  };
+
+  const [secondsLeft, setSecondsLeft] = useState(computeRemaining);
+
+  useEffect(() => {
+    setSecondsLeft(computeRemaining());
+    if (isPastNode || spotNumber >= 6 || isFinalNode) return;
+
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [spotNumber, levelTimerStartMs, isPastNode, isFinalNode]);
 
   // Duck background audio while reward video is playing
   useEffect(() => {
@@ -125,30 +153,30 @@ export const RewardModal: React.FC<RewardModalProps> = ({
     const shareText = `🎯 I just unlocked Level ${spotNumber}: ${displayTitle} on Fred Again's India Tour Bandhunt!\nGive Fred his first real India tour: ${url}`;
 
     if (platform === "whatsapp") {
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, "_blank");
+      const waText = `🚨 *FRED AGAIN.. INDIA TOUR BANDHUNT* 🎧\n\n🎯 Just unlocked *Level ${spotNumber}: ${locationName}*!\n"${catchphrase}"\n\n📍 Can you track down the secret bands across Mumbai before the real tour drops?\n\n👉 *Play now:* ${url}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`, "_blank");
     } else if (platform === "twitter") {
       window.open(
-        `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`,
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🎧 Just unlocked Level ${spotNumber} on @fredagainagain's India Tour Bandhunt! (${locationName})\n\nTrack down the secret bands:`)}&url=${encodeURIComponent(url)}`,
         "_blank"
       );
     } else if (platform === "linkedin") {
-      window.open(
-        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-        "_blank"
-      );
+      const linkedinCaption = `🎧 Testing creative geolocation cartels with Fred Again's India Tour Bandhunt by taest.club.\n\nJust pinpointed Level ${spotNumber} at ${locationName}.\n\nExplore the interactive audio map here: ${url}\n\n#FredAgain #CreativeTech #WebAudio #InteractiveExperience #Mumbai`;
+      navigator.clipboard?.writeText(linkedinCaption);
+      setCopiedShare("Caption copied to clipboard! 📋 Opening LinkedIn...");
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
     } else if (platform === "facebook") {
       window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(`Just unlocked Level ${spotNumber}: ${locationName} on Fred Again's India Tour Bandhunt!`)}`,
         "_blank"
       );
     } else if (platform === "instagram") {
       // Trigger card download and open IG
       handleDownloadCard();
+      setCopiedShare("Story Video Downloaded! 📸 Opening Instagram...");
       setTimeout(() => {
         window.open("https://instagram.com/taest.club", "_blank");
-      }, 500);
-    } else if (platform === "youtube") {
-      window.open("https://www.youtube.com/@taestclub", "_blank");
+      }, 600);
     }
   };
 
@@ -162,7 +190,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
     setTimeout(() => setCopiedShare(null), 3000);
   };
 
-  // Handle Fan Vote Pitch Submission
+  // Handle Fan Vote Pitch / Contact Submission
   const handlePitchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pitchText.trim()) return;
@@ -175,6 +203,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           suggestedCity: selectedCity,
           experienceDescription: pitchText,
           submittedBy: "Fred Fan",
+          levelUnlocked: spotNumber,
         }),
       });
 
@@ -207,7 +236,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           </button>
         </div>
 
-        {/* 2. Direct Official Reward Video Window */}
+        {/* 2. Direct Official Reward Video Window (Location badge removed as requested) */}
         <div className="relative aspect-video w-full rounded-2xl overflow-hidden border-[2.5px] border-[#1C1C1C] shadow-inner bg-black">
           <video
             src={currentVideo}
@@ -217,18 +246,11 @@ export const RewardModal: React.FC<RewardModalProps> = ({
             loop
             className="w-full h-full object-cover"
           />
-
-          {/* Badge over video */}
-          <div className="absolute bottom-2.5 left-2.5 pointer-events-none z-10">
-            <span className="text-[10px] font-mono font-black uppercase px-2.5 py-1 bg-white text-[#1C1C1C] border border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] rounded-md">
-              ★ {locationName}
-            </span>
-          </div>
         </div>
 
         {/* 3. Node Revealed Story Title & Lore - Center Aligned */}
         <div className="flex flex-col gap-1 text-center items-center">
-          <h2 className="text-base sm:text-lg font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-snug">
+          <h2 className="text-base sm:text-lg font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-snug whitespace-pre-line">
             {displayTitle}
           </h2>
           <p className="text-xs font-sans text-gray-700 font-medium leading-relaxed">
@@ -236,20 +258,20 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           </p>
         </div>
 
-        {/* 4. Hindi Branding Banner with line break */}
-        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-3 text-center flex flex-col gap-1 shadow-[2px_2px_0px_#1C1C1C]">
-          <p className="text-xs sm:text-[13px] font-sans font-bold text-[#1C1C1C] leading-relaxed">
+        {/* 4. Hindi Branding Banner - Font sized up and bold with sentence break */}
+        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-3.5 text-center flex flex-col gap-1 shadow-[2px_2px_0px_#1C1C1C]">
+          <p className="text-sm sm:text-base font-sans font-black text-[#1C1C1C] leading-snug">
             Your hunt for fred&apos;s India tour bands,
             <br />
             just gave him his first real{" "}
-            <span className="text-[#FF2E9A] font-black text-sm sm:text-base inline-block px-1">
+            <span className="text-[#FF2E9A] font-black text-base sm:text-lg inline-block px-1">
               इंडिया टूर
             </span>
             .
           </p>
         </div>
 
-        {/* 5. Follow taest.club IG and WA Channel Buttons */}
+        {/* 5. Follow taest.club IG and WA Channel Buttons (active WhatsApp group link) */}
         <div className="grid grid-cols-2 gap-2">
           <a
             href="https://instagram.com/taest.club"
@@ -261,7 +283,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
             <span>Follow on IG</span>
           </a>
           <a
-            href="https://whatsapp.com/channel/0029Va9y6XU0VycF8v8R6D1O"
+            href="https://chat.whatsapp.com/EM12Mf0PE6J007pdF1w1Ne?s=cl&p=a&mlu=4&ilr=4"
             target="_blank"
             rel="noopener noreferrer"
             className="py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-sans font-black uppercase text-white flex items-center justify-center gap-1.5 transition-all"
@@ -271,7 +293,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           </a>
         </div>
 
-        {/* 6. Social Share Row + Story Card Download */}
+        {/* 6. Social Share Row + Story Card Download (YouTube removed, 5 platforms) */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-[10px] font-mono font-black text-gray-500 uppercase">
             <span>SHARE THIS LEVEL:</span>
@@ -281,7 +303,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
               </span>
             )}
           </div>
-          <div className="grid grid-cols-6 gap-1.5">
+          <div className="grid grid-cols-5 gap-1.5">
             <button
               onClick={() => handlePlatformShare("instagram")}
               className="py-2 rounded-xl bg-gradient-to-tr from-[#FD1D1D] to-[#833AB4] text-white flex items-center justify-center border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] hover:scale-105 active:scale-95 transition-all cursor-pointer"
@@ -304,13 +326,6 @@ export const RewardModal: React.FC<RewardModalProps> = ({
               <Twitter className="w-4 h-4" />
             </button>
             <button
-              onClick={() => handlePlatformShare("youtube")}
-              className="py-2 rounded-xl bg-[#FF0000] text-white flex items-center justify-center border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-              title="Watch on YouTube"
-            >
-              <Youtube className="w-4 h-4" />
-            </button>
-            <button
               onClick={() => handlePlatformShare("linkedin")}
               className="py-2 rounded-xl bg-[#0A66C2] text-white flex items-center justify-center border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] hover:scale-105 active:scale-95 transition-all cursor-pointer"
               title="Share on LinkedIn"
@@ -327,25 +342,25 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           </div>
         </div>
 
-        {/* 7. Community Signup Box (City names removed from copy; Goa removed from selector) */}
+        {/* 7. Community Signup Box (Center aligned, "Follow taest.club" removed, green pill on submit) */}
         <div className="bg-[#F5F8FF] border-2 border-[#1C1C1C] rounded-2xl p-3.5 flex flex-col gap-2.5 shadow-[3px_3px_0px_#1C1C1C]">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 text-center items-center">
             <span className="text-[11px] font-sans font-black uppercase text-[#5D00FF]">
               ★ JOIN THE OFFLINE BANDHUNT
             </span>
-            <p className="text-xs font-sans font-bold text-[#1C1C1C] leading-snug">
-              Sign up for invites to the offline bandhunt event in your city. Solve clues, hunt tickets, find your tribe. Follow taest.club.
+            <p className="text-xs font-sans font-bold text-[#1C1C1C] leading-snug text-center">
+              Sign up for invites to the offline bandhunt event in your city. Solve clues, hunt tickets, find your tribe.
             </p>
           </div>
 
           {pitchSubmitted ? (
-            <div className="bg-[#CFFF04] border border-[#1C1C1C] rounded-xl p-2.5 text-center text-xs font-black uppercase text-[#1C1C1C] flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>YOU&apos;RE ON THE TRIBE DISPATCH LIST! 🎉</span>
+            <div className="bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-full py-2 px-4 text-center text-xs font-black uppercase text-[#1C1C1C] flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+              <CheckCircle2 className="w-4 h-4 text-[#1C1C1C]" />
+              <span>YOU&apos;RE ON THE TAEST INVITE LIST! 🎉</span>
             </div>
           ) : (
             <form onSubmit={handlePitchSubmit} className="flex flex-col gap-2">
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap justify-center gap-1">
                 {["Mumbai", "Delhi", "Bengaluru"].map((city) => (
                   <button
                     key={city}
@@ -382,15 +397,14 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           )}
         </div>
 
-        {/* 8. Individual 59s Timer / Hunt Next Level / Offline Bandhunt Milestone Button */}
-        {secondsLeft > 0 ? (
-          <div className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border-2 border-[#1C1C1C] text-[#1C1C1C] font-mono font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#FF2E9A] animate-ping" />
-            <span>
-              Next known location of the band unlocks in 00:00:
-              {secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft}
-            </span>
-          </div>
+        {/* 8. Controls: Past Node (Close Only) vs Active Level (Countdown / Next Level / Milestone) */}
+        {isPastNode ? (
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-gray-100 active:scale-98 text-[#1C1C1C] font-black text-xs sm:text-sm uppercase border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <span>CLOSE REWARD ✕</span>
+          </button>
         ) : spotNumber >= 6 || isFinalNode ? (
           <button
             onClick={() => {
@@ -402,6 +416,14 @@ export const RewardModal: React.FC<RewardModalProps> = ({
             <Ticket className="w-4 h-4" />
             <span>That’s it. You just unlocked the location of Mumbai’s offline Bandhunt. ➔</span>
           </button>
+        ) : secondsLeft > 0 ? (
+          <div className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border-2 border-[#1C1C1C] text-[#1C1C1C] font-mono font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#FF2E9A] animate-ping" />
+            <span>
+              Next known location of the band unlocks in 00:00:
+              {secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft}
+            </span>
+          </div>
         ) : (
           <button
             onClick={() => {

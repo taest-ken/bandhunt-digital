@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
-import { MUMBAI_BOUNDS } from "@/lib/config/tourSchedule";
+import { MUMBAI_BOUNDS, TOUR_NODES } from "@/lib/config/tourSchedule";
 import { TourPhase } from "@/types/hitmap";
 import { Plus, Minus } from "lucide-react";
 
@@ -10,6 +10,8 @@ interface MapCanvasProps {
   initialCenter: [number, number]; // [lng, lat]
   resetCoord?: [number, number];
   currentLevelIndex?: number;
+  completedLevels?: number[];
+  onSelectPastNode?: (levelIndex: number) => void;
   velocity: { vx: number; vy: number }; // from joystick
   onCenterChange: (center: [number, number], levelIndex?: number) => void;
   isLockedIn: boolean;
@@ -62,6 +64,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   initialCenter,
   resetCoord,
   currentLevelIndex = 0,
+  completedLevels = [],
+  onSelectPastNode,
   velocity,
   onCenterChange,
   isLockedIn,
@@ -72,6 +76,8 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const pastLevelMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const phase2MarkerRef = useRef<maplibregl.Marker | null>(null);
   const phase3MarkersRef = useRef<maplibregl.Marker[]>([]);
   const animFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
@@ -588,6 +594,92 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       }
     }
   }, [isLockedIn, lockedCoordinates]);
+
+  // Permanent Pink Map Markers for previously completed levels in Phase 1
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Clear existing past level markers
+    pastLevelMarkersRef.current.forEach((m) => m.remove());
+    pastLevelMarkersRef.current = [];
+
+    if (activePhase !== "PHASE_1_HUNT") return;
+
+    const markers: maplibregl.Marker[] = [];
+    completedLevels.forEach((levelNum) => {
+      const nodeIndex = levelNum - 1;
+      const node = TOUR_NODES[nodeIndex];
+      if (!node) return;
+
+      const el = document.createElement("div");
+      el.className = "cursor-pointer group flex flex-col items-center select-none pointer-events-auto";
+      el.innerHTML = `
+        <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none mb-1 px-2.5 py-1 bg-[#1C1C1C] text-white text-[10px] font-sans font-black uppercase rounded-lg border border-[#FF2E9A] shadow-md whitespace-nowrap -translate-y-1">
+          Band was previously seen near ${node.locationName}
+        </div>
+        <div class="relative flex items-center justify-center">
+          <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-[#FF2E9A] opacity-40"></span>
+          <div class="relative w-9 h-9 rounded-2xl bg-[#FF2E9A] border-2 border-[#1C1C1C] shadow-[2.5px_2.5px_0px_#1C1C1C] flex items-center justify-center text-white font-black text-xs hover:scale-110 active:scale-95 transition-transform">
+            <span>#${levelNum}</span>
+          </div>
+        </div>
+      `;
+
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onSelectPastNode?.(nodeIndex);
+      });
+
+      const m = new maplibregl.Marker({ element: el })
+        .setLngLat(node.coordinates)
+        .addTo(map);
+
+      markers.push(m);
+    });
+
+    pastLevelMarkersRef.current = markers;
+  }, [completedLevels, activePhase, onSelectPastNode]);
+
+  // Phase 2 Ground Zero Marker at Asiatic Society Library Steps
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (activePhase === "PHASE_2_LIVE") {
+      if (!phase2MarkerRef.current) {
+        const el = document.createElement("div");
+        el.className = "flex flex-col items-center pointer-events-none select-none";
+        el.innerHTML = `
+          <div class="flex items-center gap-1 mb-1">
+            <span class="text-[9px] font-mono font-black text-white bg-[#FF0040] border-[1.5px] border-[#1C1C1C] px-2.5 py-0.5 rounded-md shadow-[2px_2px_0px_#1C1C1C] uppercase tracking-wide animate-pulse">
+              🚨 OFFLINE DROP GROUND ZERO
+            </span>
+          </div>
+          <div class="relative flex items-center justify-center">
+            <span class="animate-ping absolute inline-flex h-16 w-16 rounded-full bg-[#FF0040] opacity-60"></span>
+            <span class="relative inline-flex rounded-2xl h-10 w-10 bg-[#FF0040] border-2 border-[#1C1C1C] items-center justify-center text-lg text-white font-black shadow-[3px_3px_0px_#1C1C1C]">
+              🏛️
+            </span>
+          </div>
+          <div class="mt-1 px-3 py-1 bg-white text-[#1C1C1C] border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] rounded-xl font-black text-xs whitespace-nowrap uppercase">
+            ASIATIC SOCIETY LIBRARY STEPS (FORT)
+          </div>
+        `;
+
+        phase2MarkerRef.current = new maplibregl.Marker({ element: el })
+          .setLngLat(meetupCoordinates)
+          .addTo(map);
+      } else {
+        phase2MarkerRef.current.setLngLat(meetupCoordinates);
+      }
+    } else {
+      if (phase2MarkerRef.current) {
+        phase2MarkerRef.current.remove();
+        phase2MarkerRef.current = null;
+      }
+    }
+  }, [activePhase, meetupCoordinates]);
 
   // Reliable Zoom In / Zoom Out Handlers
   const handleZoomIn = (e: React.MouseEvent) => {

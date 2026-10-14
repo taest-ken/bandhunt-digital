@@ -34,10 +34,10 @@ function writeSubmissions(items: PitchSubmission[]) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { suggestedCity, experienceDescription, submittedBy } = body as PitchSubmission;
+    const { suggestedCity, experienceDescription, submittedBy, levelUnlocked, source } = body as PitchSubmission;
 
     if (!suggestedCity || !experienceDescription) {
-      return NextResponse.json({ error: "City and experience are required" }, { status: 400 });
+      return NextResponse.json({ error: "City and contact/experience are required" }, { status: 400 });
     }
 
     const currentSubmissions = readSubmissions();
@@ -45,16 +45,33 @@ export async function POST(request: Request) {
     const newSubmission: PitchSubmission = {
       suggestedCity: suggestedCity.trim(),
       experienceDescription: experienceDescription.trim(),
+      contact: experienceDescription.trim(),
       submittedBy: submittedBy?.trim() || "Anonymous Fred Fan",
+      levelUnlocked: typeof levelUnlocked === "number" ? levelUnlocked : undefined,
+      source: source || "bandhunt_web",
       createdAt: new Date().toISOString(),
     };
 
     currentSubmissions.push(newSubmission);
     writeSubmissions(currentSubmissions);
 
+    // Optional webhook forwarder for founders (Google Sheets / Zapier / Airtable / Luma)
+    const webhookUrl = process.env.RSVP_WEBHOOK_URL;
+    if (webhookUrl) {
+      try {
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSubmission),
+        }).catch((err) => console.warn("Webhook forward failed:", err));
+      } catch (wErr) {
+        console.warn("Could not fire webhook:", wErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Pitch recorded in official tour database! The coolest ones get featured as surprise nodes!",
+      message: "Registration recorded successfully! You're on the taest invite list.",
       submissionCount: currentSubmissions.length,
       storedLocation: "src/data/fan_submissions.json",
     });
