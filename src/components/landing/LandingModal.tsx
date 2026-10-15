@@ -57,7 +57,7 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
         </div>
 
         {/* Sticker 1: Handheld Detector - Top-Right Corner */}
-        <div className="absolute -top-12 sm:-top-16 -right-2 sm:-right-4 w-[75px] sm:w-[92px] h-[166px] sm:h-[204px] pointer-events-none rotate-[12deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
+        <div className="absolute -top-14 sm:-top-18 -right-6 sm:-right-8 w-[75px] sm:w-[92px] h-[166px] sm:h-[204px] pointer-events-none rotate-[12deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
           <Image
             src="/assets/detector/body.png"
             alt="Handheld Detector"
