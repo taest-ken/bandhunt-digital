@@ -52,9 +52,9 @@ export default function HitmapApp() {
   // Level Timer Persistence: recorded on first reveal of node, does not reset on modal close
   const [levelTimerStartMs, setLevelTimerStartMs] = useState<number | undefined>(undefined);
 
-  // 250m Proximity auto-dismissing toast
+  // Proximity auto-dismissing toast (comes earlier and re-arms when user moves away and returns)
   const [showProximityToast, setShowProximityToast] = useState(false);
-  const hasShownToastForLevelRef = useRef<number | null>(null);
+  const toastArmedRef = useRef<boolean>(true);
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Level Progression: 0..5 index corresponding to Level 1..6
@@ -181,20 +181,20 @@ export default function HitmapApp() {
           const engine = getHitmapAudioEngine();
           engine.updateProximity(data.proximity);
 
-          // 250m Proximity auto-dismissing toast (triggers once per level approach)
-          if (
-            data.distanceMeters &&
-            data.distanceMeters <= 250 &&
-            data.distanceMeters > 25 &&
-            !data.verified
-          ) {
-            if (hasShownToastForLevelRef.current !== targetLevel) {
-              hasShownToastForLevelRef.current = targetLevel;
-              setShowProximityToast(true);
-              if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-              toastTimerRef.current = setTimeout(() => {
-                setShowProximityToast(false);
-              }, 4500);
+          // Earlier proximity auto-dismissing toast: triggers at <= 350m, re-arms when user moves > 480m away
+          if (data.distanceMeters && !data.verified) {
+            if (data.distanceMeters <= 350 && data.distanceMeters > 30) {
+              if (toastArmedRef.current) {
+                toastArmedRef.current = false;
+                setShowProximityToast(true);
+                if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+                toastTimerRef.current = setTimeout(() => {
+                  setShowProximityToast(false);
+                }, 4500);
+              }
+            } else if (data.distanceMeters > 480) {
+              // Re-arm so returning to the radius displays it again
+              toastArmedRef.current = true;
             }
           }
         }
@@ -233,7 +233,7 @@ export default function HitmapApp() {
     setShowRewardModal(false);
     setSelectedPastLevelIndex(null);
     setShowProximityToast(false);
-    hasShownToastForLevelRef.current = null;
+    toastArmedRef.current = true;
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
 
     setRadar({
@@ -266,7 +266,7 @@ export default function HitmapApp() {
     setHasDismissedReward(false);
     setSelectedPastLevelIndex(null);
     setShowProximityToast(false);
-    hasShownToastForLevelRef.current = null;
+    toastArmedRef.current = true;
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
 
     // Reset level timer for the new level
@@ -331,7 +331,7 @@ export default function HitmapApp() {
     setHasDismissedReward(false);
     setSelectedPastLevelIndex(null);
     setShowProximityToast(false);
-    hasShownToastForLevelRef.current = null;
+    toastArmedRef.current = true;
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
 
     const node1 = TOUR_NODES[0];
@@ -472,7 +472,7 @@ export default function HitmapApp() {
             className="pointer-events-auto cursor-pointer bg-[#FFE600] text-[#1C1C1C] border-[3px] border-[#1C1C1C] rounded-2xl px-4 py-2.5 shadow-[4px_4px_0px_#1C1C1C] flex items-center gap-2.5 font-sans font-black text-xs sm:text-sm uppercase tracking-wide transition-transform hover:scale-105 active:scale-95"
           >
             <span className="text-base">🔍</span>
-            <span>ZOOM IN TO PINPOINT! FRED IS WITHIN 250M!</span>
+            <span>ZOOM IN TO PINPOINT! BAND IS WITHIN 250M!</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();

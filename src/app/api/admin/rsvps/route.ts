@@ -45,20 +45,54 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const format = searchParams.get("format");
+  const listType = searchParams.get("list"); // 'city_invites' | 'mumbai_registrations' | null
   const pwd = searchParams.get("pwd") || request.headers.get("x-admin-password") || "";
   const submissions = readSubmissions();
 
+  // Helper to test if submission belongs to List 2 (Mumbai Offline Bandhunt Early Access Registrations)
+  const isMumbaiOffline = (s: PitchSubmission) =>
+    s.source === "mumbai_offline_registration" ||
+    s.source === "offline_bandhunt_modal" ||
+    s.submittedBy === "Mumbai Offline Bandhunt Early Access";
+
+  const mumbaiOfflineRegistrations = submissions.filter(isMumbaiOffline);
+  const cityInviteRequests = submissions.filter((s) => !isMumbaiOffline(s));
+
   if (format === "csv") {
-    // Generate RFC 4180 compliant CSV
-    const headers = ["Timestamp (UTC)", "City", "Contact / Input", "Level Unlocked", "Source", "Submitted By"];
-    const rows = submissions.map((sub) => {
+    let targetList: PitchSubmission[];
+    let filename: string;
+    let headers: string[];
+
+    if (listType === "mumbai_registrations") {
+      targetList = mumbaiOfflineRegistrations;
+      filename = "mumbai_offline_bandhunt_registrations.csv";
+      headers = ["Index", "Timestamp (UTC)", "Contact (Phone / Email)", "Access Type", "City", "Source"];
+    } else if (listType === "city_invites") {
+      targetList = cityInviteRequests;
+      filename = "city_specific_invite_requests.csv";
+      headers = ["Index", "Timestamp (UTC)", "Contact (Phone / Email)", "Target City", "Level Unlocked", "Source"];
+    } else {
+      targetList = submissions;
+      filename = "all_bandhunt_submissions.csv";
+      headers = ["Index", "Timestamp (UTC)", "List Category", "Contact (Phone / Email)", "City", "Level Unlocked", "Source", "Submitted By"];
+    }
+
+    const rows = targetList.map((sub, idx) => {
       const date = sub.createdAt || new Date().toISOString();
-      const city = `"${(sub.suggestedCity || "").replace(/"/g, '""')}"`;
       const contact = `"${(sub.contact || sub.experienceDescription || "").replace(/"/g, '""')}"`;
-      const level = sub.levelUnlocked ? `Level ${sub.levelUnlocked}` : "All";
+      const city = `"${(sub.suggestedCity || "Mumbai").replace(/"/g, '""')}"`;
       const source = `"${(sub.source || "web").replace(/"/g, '""')}"`;
-      const user = `"${(sub.submittedBy || "").replace(/"/g, '""')}"`;
-      return [date, city, contact, level, source, user].join(",");
+      const level = sub.levelUnlocked ? `Level ${sub.levelUnlocked}` : "All";
+      const category = isMumbaiOffline(sub) ? "List 2: Mumbai Offline Registration" : "List 1: City Specific Invite";
+
+      if (listType === "mumbai_registrations") {
+        return [idx + 1, date, contact, '"Early Access Pass"', city, source].join(",");
+      } else if (listType === "city_invites") {
+        return [idx + 1, date, contact, city, level, source].join(",");
+      } else {
+        const user = `"${(sub.submittedBy || "").replace(/"/g, '""')}"`;
+        return [idx + 1, date, `"${category}"`, contact, city, level, source, user].join(",");
+      }
     });
 
     const csvContent = [headers.join(","), ...rows].join("\r\n");
@@ -67,8 +101,8 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="taest_bandhunt_rsvps.csv"',
-        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   }
@@ -80,10 +114,23 @@ export async function GET(request: Request) {
     cityCounts[city] = (cityCounts[city] || 0) + 1;
   });
 
-  return NextResponse.json({
-    totalCount: submissions.length,
-    cityCounts,
-    submissions,
-    downloadCsvUrl: `/api/admin/rsvps?format=csv&pwd=${encodeURIComponent(pwd)}`,
-  });
+  return NextResponse.json(
+    {
+      totalCount: submissions.length,
+      list1Count: cityInviteRequests.length,
+      list2Count: mumbaiOfflineRegistrations.length,
+      cityCounts,
+      cityInviteRequests,
+      mumbaiOfflineRegistrations,
+      submissions,
+      downloadList1CsvUrl: `/api/admin/rsvps?format=csv&list=city_invites&pwd=${encodeURIComponent(pwd)}`,
+      downloadList2CsvUrl: `/api/admin/rsvps?format=csv&list=mumbai_registrations&pwd=${encodeURIComponent(pwd)}`,
+      downloadAllCsvUrl: `/api/admin/rsvps?format=csv&pwd=${encodeURIComponent(pwd)}`,
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    }
+  );
 }

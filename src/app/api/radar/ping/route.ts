@@ -34,13 +34,13 @@ export async function POST(request: Request) {
     const jitterMagnitude = (1 - proximity) * 16;
     const jitter = Math.sin(now / 350) * jitterMagnitude;
 
+    const isLockedIn = proximity >= 0.95 || distanceMeters <= 50;
+
     let zone: RadarPingResponse["zone"] = "COLD";
-    if (proximity >= 0.98) zone = "LOCK_IN";
+    if (isLockedIn) zone = "LOCK_IN";
     else if (proximity >= 0.80) zone = "HOT";
     else if (proximity >= 0.55) zone = "WARM";
     else if (proximity >= 0.25) zone = "DETECTING";
-
-    const isLockedIn = distanceMeters <= 25; // 25 meters lock-in radius
 
     const response: RadarPingResponse = {
       proximity: parseFloat(proximity.toFixed(4)),

@@ -268,7 +268,7 @@ export const HandheldDetector: React.FC<HandheldDetectorProps> = ({
             ? "LOCATION LOCKED! TAP TO REVEAL"
             : isDragging
             ? "MOVING FRED // SEARCHING CITY..."
-            : "DRAG FRED ACROSS MAP TO SEARCH"}
+            : "MOVE FRED ACROSS MAP TO SEARCH"}
         </div>
 
         {/* Direction & Distance Hint */}

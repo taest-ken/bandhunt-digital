@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://bandhunt.taest.in"),
   title: "Fred's India Tour Before The India Tour // THE HITMAP",
   description: "An episodic digital scavenger hunt across India powered by beats and basslines. Move Fred, follow the beat, find the last seen location of fredagain India tour bands.",
   icons: {
@@ -16,20 +17,20 @@ export const metadata: Metadata = {
     siteName: "Bandhunt by taest.club",
     images: [
       {
-        url: "/assets/stickers/site_icon.png",
-        width: 512,
-        height: 512,
-        alt: "Bandhunt by taest.club",
+        url: "/assets/og_preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Fred's India Tour Before The India Tour // THE HITMAP by taest.club",
       },
     ],
     locale: "en_US",
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Fred's India Tour Before The India Tour // THE HITMAP",
     description: "An episodic digital scavenger hunt across India powered by beats and basslines. Move Fred, follow the beat, find the last seen location of fredagain India tour bands.",
-    images: ["/assets/stickers/site_icon.png"],
+    images: ["/assets/og_preview.png"],
   },
 };
 

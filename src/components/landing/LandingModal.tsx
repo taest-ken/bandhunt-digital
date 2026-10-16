@@ -20,9 +20,11 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
         </div>
 
         {/* Headline & Subhead (Center Aligned) */}
-        <div className="flex flex-col items-center gap-1 mt-0.5 sm:mt-1 text-center">
-          <h1 className="text-xl sm:text-3xl font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-[1.15]">
-            no real fred fan left behind
+        <div className="flex flex-col items-center gap-1 mt-0.5 sm:mt-1 text-center max-w-[280px] sm:max-w-xs mx-auto">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-[1.15]">
+            No Real Fred Fan
+            <br />
+            Left Behind
           </h1>
           <p className="text-xs sm:text-sm font-sans font-bold text-[#5D00FF] uppercase tracking-wide">
             A digital game of hot &amp; cold.
@@ -56,11 +58,22 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
           </div>
         </div>
 
-        {/* Sticker 1: Handheld Detector - Top-Right Corner */}
-        <div className="absolute -top-14 sm:-top-18 -right-6 sm:-right-8 w-[75px] sm:w-[92px] h-[166px] sm:h-[204px] pointer-events-none rotate-[12deg] drop-shadow-[6px_6px_0px_#1C1C1C] z-30">
+        {/* Sticker 1: Sad Fred - Top-Left Corner (Halfway card overlap, zero text overlap) */}
+        <div className="absolute -top-7 sm:-top-9 -left-6 sm:-left-8 w-[70px] sm:w-[85px] h-[96px] sm:h-[117px] pointer-events-none rotate-[-12deg] drop-shadow-[5px_5px_0px_#1C1C1C] z-30">
           <Image
-            src="/assets/detector/body.png"
-            alt="Handheld Detector"
+            src="/assets/stickers/sad_fred_trimmed.png"
+            alt="Sad Fred"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+
+        {/* Sticker 2: Happy Fred - Top-Right Corner (Halfway card overlap, zero text overlap) */}
+        <div className="absolute -top-7 sm:-top-9 -right-6 sm:-right-8 w-[72px] sm:w-[88px] h-[85px] sm:h-[104px] pointer-events-none rotate-[12deg] drop-shadow-[5px_5px_0px_#1C1C1C] z-30">
+          <Image
+            src="/assets/stickers/happy_fred_trimmed.png"
+            alt="Happy Fred"
             fill
             className="object-contain"
             priority

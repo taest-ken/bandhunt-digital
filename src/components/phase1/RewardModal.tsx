@@ -191,7 +191,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           experienceDescription: pitchText.trim(),
           submittedBy: "Fred Fan",
           levelUnlocked: spotNumber,
-          source: "reward_modal",
+          source: "city_invite_request",
         }),
       });
 
@@ -246,10 +246,10 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           </p>
         </div>
 
-        {/* 4. Hindi Branding Banner - Font sized up and bold with sentence break */}
+        {/* 4. Hindi Branding Banner - Capital F in Fred's */}
         <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-3.5 text-center flex flex-col gap-1 shadow-[2px_2px_0px_#1C1C1C]">
           <p className="text-sm sm:text-base font-sans font-black text-[#1C1C1C] leading-snug">
-            Your hunt for fred&apos;s India tour bands,
+            Your hunt for Fred&apos;s India tour bands,
             <br />
             just gave him his first real{" "}
             <span className="text-[#FF2E9A] font-black text-base sm:text-lg inline-block px-1">
@@ -259,29 +259,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           </p>
         </div>
 
-        {/* 5. Follow taest.club IG and WA Channel Buttons (active WhatsApp group link) */}
-        <div className="grid grid-cols-2 gap-2">
-          <a
-            href="https://instagram.com/taest.club"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-2.5 px-3 rounded-xl bg-white hover:bg-gray-50 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-sans font-black uppercase text-[#1C1C1C] flex items-center justify-center gap-1.5 transition-all"
-          >
-            <Instagram className="w-4 h-4 text-[#E1306C]" />
-            <span>Follow on IG</span>
-          </a>
-          <a
-            href="https://chat.whatsapp.com/EM12Mf0PE6J007pdF1w1Ne?s=cl&p=a&mlu=4&ilr=4"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-sans font-black uppercase text-white flex items-center justify-center gap-1.5 transition-all"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Join WA Channel</span>
-          </a>
-        </div>
-
-        {/* 6. Social Share Row + Story Card Download (YouTube removed, 5 platforms) */}
+        {/* 5. Social Share Row + Story Card Download (Moved before follow buttons) */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-[10px] font-mono font-black text-gray-500 uppercase">
             <span>SHARE THIS LEVEL:</span>
@@ -328,6 +306,28 @@ export const RewardModal: React.FC<RewardModalProps> = ({
               <Facebook className="w-4 h-4" />
             </button>
           </div>
+        </div>
+
+        {/* 6. Follow taest.club IG and WA Channel Buttons (Reordered after share component) */}
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href="https://instagram.com/taest.club"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-2.5 px-3 rounded-xl bg-white hover:bg-gray-50 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-sans font-black uppercase text-[#1C1C1C] flex items-center justify-center gap-1.5 transition-all"
+          >
+            <Instagram className="w-4 h-4 text-[#E1306C]" />
+            <span>Follow on IG</span>
+          </a>
+          <a
+            href="https://chat.whatsapp.com/EM12Mf0PE6J007pdF1w1Ne?s=cl&p=a&mlu=4&ilr=4"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-sans font-black uppercase text-white flex items-center justify-center gap-1.5 transition-all"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Join WA Channel</span>
+          </a>
         </div>
 
         {/* 7. Community Signup Box (Center aligned, "Follow taest.club" removed, green pill on submit) */}

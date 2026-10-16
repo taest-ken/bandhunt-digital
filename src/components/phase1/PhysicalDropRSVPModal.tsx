@@ -36,11 +36,11 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          suggestedCity: selectedCity,
+          suggestedCity: "Mumbai",
           contact: contact.trim(),
           experienceDescription: contact.trim(),
-          submittedBy: "Offline Bandhunt RSVP",
-          source: "offline_bandhunt_modal",
+          submittedBy: "Mumbai Offline Bandhunt Early Access",
+          source: "mumbai_offline_registration",
         }),
       });
 
@@ -169,26 +169,8 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-black uppercase text-[#1C1C1C] flex items-center gap-1.5">
                 <Bell className="w-3.5 h-3.5 text-[#FF2E9A]" />
-                <span>CHOOSE CITY &amp; CLAIM PASS:</span>
+                <span>Claim the last few spots for Mumbai Offline Bandhunt.</span>
               </label>
-
-              {/* City Selection Pills */}
-              <div className="flex items-center gap-1">
-                {["Mumbai", "Delhi", "Bengaluru"].map((city) => (
-                  <button
-                    key={city}
-                    type="button"
-                    onClick={() => setSelectedCity(city)}
-                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border border-[#1C1C1C] cursor-pointer transition-colors ${
-                      selectedCity === city
-                        ? "bg-[#5D00FF] text-white shadow-[1px_1px_0px_#1C1C1C]"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className="flex gap-2">
@@ -196,7 +178,7 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
                 type="text"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
-                placeholder={`WhatsApp number or email for ${selectedCity}...`}
+                placeholder="WhatsApp number or email for Mumbai drop alerts..."
                 required
                 className="flex-1 px-3.5 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-bold text-[#1C1C1C] placeholder-gray-400 focus:outline-none"
               />
@@ -204,7 +186,7 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
                 type="submit"
                 className="px-4 py-2 rounded-xl bg-[#CFFF04] hover:bg-[#b8e600] text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] cursor-pointer whitespace-nowrap active:scale-95"
               >
-                RSVP NOW
+                CLAIM PASS
               </button>
             </div>
           </form>
