@@ -17,7 +17,7 @@ function readSubmissions(): PitchSubmission[] {
   return [];
 }
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "taest2026";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 function checkAuth(request: Request): boolean {
   const { searchParams } = new URL(request.url);
