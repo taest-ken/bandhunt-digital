@@ -18,6 +18,11 @@ import {
   Sparkles,
   Layers,
   CheckCircle2,
+  Clock,
+  Sliders,
+  ExternalLink,
+  Eye,
+  Save,
 } from "lucide-react";
 
 interface Submission {
@@ -57,6 +62,40 @@ export default function AdminDashboardPage() {
   // Filter for List 2
   const [list2Search, setList2Search] = useState<string>("");
 
+  // Phase Management State
+  const [phaseConfig, setPhaseConfig] = useState<{
+    phase2StartTime: string;
+    phase3StartTime: string;
+    manualOverride: "AUTO" | "FORCE_PHASE_1" | "FORCE_PHASE_2" | "FORCE_PHASE_3";
+  }>({
+    phase2StartTime: "2026-11-14T00:00",
+    phase3StartTime: "2026-11-15T00:00",
+    manualOverride: "AUTO",
+  });
+  const [currentActivePhase, setCurrentActivePhase] = useState<string>("PHASE_1_HUNT");
+  const [isSavingPhase, setIsSavingPhase] = useState<boolean>(false);
+  const [phaseSuccessMessage, setPhaseSuccessMessage] = useState<string | null>(null);
+
+  const isoToDatetimeLocal = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      const pad = (n: number) => (n < 10 ? "0" + n : n);
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch {
+      return "";
+    }
+  };
+
+  const datetimeLocalToIso = (localStr: string) => {
+    try {
+      const d = new Date(localStr);
+      return d.toISOString();
+    } catch {
+      return localStr;
+    }
+  };
+
   // Password barrier states
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>("");
@@ -91,6 +130,24 @@ export default function AdminDashboardPage() {
         try {
           sessionStorage.setItem("taest_founder_auth", pwd);
         } catch {}
+
+        // Fetch Phase Configuration
+        try {
+          const phaseRes = await fetch("/api/admin/phase-config", {
+            headers: { "x-admin-password": pwd },
+          });
+          if (phaseRes.ok) {
+            const pJson = await phaseRes.json();
+            setPhaseConfig({
+              phase2StartTime: isoToDatetimeLocal(pJson.config.phase2StartTime),
+              phase3StartTime: isoToDatetimeLocal(pJson.config.phase3StartTime),
+              manualOverride: pJson.config.manualOverride,
+            });
+            setCurrentActivePhase(pJson.activePhase);
+          }
+        } catch (err) {
+          console.warn("Could not load phase config:", err);
+        }
       } else {
         setAuthError("INCORRECT PASSPHRASE // ACCESS DENIED");
         setIsAuthenticated(false);
@@ -104,6 +161,44 @@ export default function AdminDashboardPage() {
     } finally {
       setIsVerifying(false);
       setLoading(false);
+    }
+  };
+
+  const handleSavePhaseConfig = async () => {
+    const pwd = sessionStorage.getItem("taest_founder_auth") || passwordInput;
+    if (!pwd) return;
+
+    setIsSavingPhase(true);
+    setPhaseSuccessMessage(null);
+
+    try {
+      const res = await fetch("/api/admin/phase-config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": pwd,
+        },
+        body: JSON.stringify({
+          password: pwd,
+          phase2StartTime: datetimeLocalToIso(phaseConfig.phase2StartTime),
+          phase3StartTime: datetimeLocalToIso(phaseConfig.phase3StartTime),
+          manualOverride: phaseConfig.manualOverride,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        setCurrentActivePhase(json.activePhase);
+        setPhaseSuccessMessage("✅ Phase schedule & timings saved successfully!");
+        setTimeout(() => setPhaseSuccessMessage(null), 5000);
+      } else {
+        alert("Failed to update phase settings. Check credentials.");
+      }
+    } catch (err) {
+      console.error("Save phase config error:", err);
+      alert("Error saving phase settings.");
+    } finally {
+      setIsSavingPhase(false);
     }
   };
 
@@ -282,6 +377,174 @@ export default function AdminDashboardPage() {
             >
               <LogOut className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+
+        {/* Phase Controller Card */}
+        <div className="bg-white p-6 rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[5px_5px_0px_#1C1C1C] flex flex-col gap-5">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#1C1C1C]/15 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#CFFF04] border-2 border-[#1C1C1C] flex items-center justify-center shadow-[2px_2px_0px_#1C1C1C]">
+                <Clock className="w-5 h-5 text-[#1C1C1C]" />
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-[#1C1C1C]">
+                  TOUR PHASES &amp; PUBLIC TIMINGS CONTROLLER
+                </h2>
+                <p className="text-xs font-bold text-gray-600">
+                  Configure when Phase 2 (Live IRL Drop) &amp; Phase 3 (Next City) unlock on the public website.
+                </p>
+              </div>
+            </div>
+
+            {/* Current Active Public Phase Badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-black text-gray-500 uppercase">CURRENT PUBLIC STATUS:</span>
+              <span
+                className={`text-xs font-mono font-black uppercase px-3 py-1 rounded-xl border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] ${
+                  currentActivePhase === "PHASE_1_HUNT"
+                    ? "bg-[#CFFF04] text-[#1C1C1C]"
+                    : currentActivePhase === "PHASE_2_LIVE"
+                    ? "bg-[#FF0040] text-white animate-pulse"
+                    : "bg-[#00F0FF] text-[#1C1C1C]"
+                }`}
+              >
+                {currentActivePhase === "PHASE_1_HUNT"
+                  ? "🎧 PHASE 1 (DIGITAL HUNT)"
+                  : currentActivePhase === "PHASE_2_LIVE"
+                  ? "🚨 PHASE 2 (IRL LIVE DROP)"
+                  : "🚌 PHASE 3 (NEXT CITY)"}
+              </span>
+            </div>
+          </div>
+
+          {/* Form Fields: Date/Time Inputs & Override Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Input 1: Phase 2 Start Time */}
+            <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-black uppercase text-[#FF0040] flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" /> Phase 2 (Live Drop) Unlock Time:
+                </span>
+                <span className="text-[10px] font-mono font-bold text-gray-500">Default: 14th Nov</span>
+              </div>
+              <input
+                type="datetime-local"
+                value={phaseConfig.phase2StartTime}
+                onChange={(e) =>
+                  setPhaseConfig((prev) => ({ ...prev, phase2StartTime: e.target.value }))
+                }
+                className="w-full px-3 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-mono font-bold text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#CFFF04]"
+              />
+              <span className="text-[10px] font-sans font-medium text-gray-500">
+                At this exact date &amp; time, the public website automatically transitions from Phase 1 to Phase 2.
+              </span>
+            </div>
+
+            {/* Input 2: Phase 3 Start Time */}
+            <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-black uppercase text-[#5D00FF] flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" /> Phase 3 (Next City) Unlock Time:
+                </span>
+                <span className="text-[10px] font-mono font-bold text-gray-500">Default: 15th Nov</span>
+              </div>
+              <input
+                type="datetime-local"
+                value={phaseConfig.phase3StartTime}
+                onChange={(e) =>
+                  setPhaseConfig((prev) => ({ ...prev, phase3StartTime: e.target.value }))
+                }
+                className="w-full px-3 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-mono font-bold text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#CFFF04]"
+              />
+              <span className="text-[10px] font-sans font-medium text-gray-500">
+                On days after Phase 2, the public website automatically transitions to Phase 3 (Waiting Room &amp; Next City road trip).
+              </span>
+            </div>
+          </div>
+
+          {/* Manual Mode Override Selector & Save Action */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#F1F5F9] border-2 border-[#1C1C1C] p-3.5 rounded-2xl">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1">
+                <Sliders className="w-3.5 h-3.5 text-gray-700" /> MODE:
+              </span>
+              {[
+                { key: "AUTO", label: "AUTO (Timer Based)" },
+                { key: "FORCE_PHASE_1", label: "Force Phase 1" },
+                { key: "FORCE_PHASE_2", label: "Force Phase 2" },
+                { key: "FORCE_PHASE_3", label: "Force Phase 3" },
+              ].map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() =>
+                    setPhaseConfig((prev) => ({ ...prev, manualOverride: m.key as any }))
+                  }
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 border-[#1C1C1C] cursor-pointer transition-all ${
+                    phaseConfig.manualOverride === m.key
+                      ? "bg-[#1C1C1C] text-[#CFFF04] shadow-[2px_2px_0px_#CFFF04]"
+                      : "bg-white text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSavePhaseConfig}
+              disabled={isSavingPhase}
+              className="px-5 py-2.5 rounded-xl bg-[#CFFF04] hover:bg-[#bcf000] text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+            >
+              <Save className="w-4 h-4" />
+              <span>{isSavingPhase ? "SAVING..." : "SAVE & APPLY SCHEDULE"}</span>
+            </button>
+          </div>
+
+          {phaseSuccessMessage && (
+            <div className="bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-xl p-2.5 text-center text-xs font-black uppercase text-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] flex items-center justify-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{phaseSuccessMessage}</span>
+            </div>
+          )}
+
+          {/* Quick Founder Live Previews Row (Preview any phase without affecting public visitors) */}
+          <div className="border-t border-[#1C1C1C]/15 pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <span className="text-[11px] font-mono font-black text-gray-600 uppercase flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5 text-[#5D00FF]" /> PREVIEW LIVE PHASES (DEMO / TESTING ONLY):
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <a
+                href="/?previewPhase=PHASE_1_HUNT"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>Preview Phase 1</span>
+                <ExternalLink className="w-3 h-3 text-gray-500" />
+              </a>
+              <a
+                href="/?previewPhase=PHASE_2_LIVE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#FF0040] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>Preview Phase 2</span>
+                <ExternalLink className="w-3 h-3 text-gray-500" />
+              </a>
+              <a
+                href="/?previewPhase=PHASE_3_WAITING"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#0088FF] flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>Preview Phase 3</span>
+                <ExternalLink className="w-3 h-3 text-gray-500" />
+              </a>
+            </div>
           </div>
         </div>
 

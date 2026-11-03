@@ -667,11 +667,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           <div class="relative flex items-center justify-center">
             <span class="animate-ping absolute inline-flex h-16 w-16 rounded-full bg-[#FF0040] opacity-60"></span>
             <span class="relative inline-flex rounded-2xl h-10 w-10 bg-[#FF0040] border-2 border-[#1C1C1C] items-center justify-center text-lg text-white font-black shadow-[3px_3px_0px_#1C1C1C]">
-              🏛️
+              🏨
             </span>
           </div>
           <div class="mt-1 px-3 py-1 bg-white text-[#1C1C1C] border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] rounded-xl font-black text-xs whitespace-nowrap uppercase">
-            ASIATIC SOCIETY LIBRARY STEPS (FORT)
+            OUTSIDE TAJ PALACE (MUMBAI)
           </div>
         `;
 

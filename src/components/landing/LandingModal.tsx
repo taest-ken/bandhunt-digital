@@ -62,8 +62,8 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
       {/* Landing Card */}
       <div className="relative w-[94%] max-w-md bg-white border-[3.5px] border-[#1C1C1C] rounded-3xl p-5 sm:p-7 shadow-[8px_8px_0px_#1C1C1C] flex flex-col items-center text-center gap-3.5 sm:gap-4">
         {/* Top Floating Logo Unit with Scaled-Up Center-Aligned Collab Logo */}
-        <div className="w-full flex items-center justify-center border-b-2 border-[#1C1C1C]/15 pb-2.5 sm:pb-3.5 pt-1">
-          <BrandCollabLogo bandhuntHeight={38} taestHeight={25} className="scale-105 sm:scale-110" />
+        <div className="w-full flex items-center justify-center border-b-2 border-[#1C1C1C]/15 pb-3 sm:pb-4 pt-1.5 overflow-hidden">
+          <BrandCollabLogo bandhuntHeight={48} taestHeight={32} className="scale-110 sm:scale-125 my-1" />
         </div>
 
         {/* Headline & Subhead (Center Aligned) */}

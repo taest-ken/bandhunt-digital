@@ -141,35 +141,69 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   const currentImage = imageUrl || `/assets/nodes/spot${spotNumber}_andheri.jpg`;
 
   // Handle Share to specific platforms
-  const handlePlatformShare = (platform: string) => {
-    const url = typeof window !== "undefined" ? window.location.origin : "https://bandhunt.taest.club";
-    const shareText = `🎯 I just unlocked Level ${spotNumber}: ${displayTitle} on Fred Again's India Tour Bandhunt!\nGive Fred his first real India tour: ${url}`;
+  const handlePlatformShare = async (platform: string) => {
+    const siteUrl = "https://bandhunt.taest.in";
 
     if (platform === "whatsapp") {
-      const waText = `🚨 *FRED AGAIN.. INDIA TOUR BANDHUNT* 🎧\n\n🎯 Just unlocked *Level ${spotNumber}: ${locationName}*!\n"${catchphrase}"\n\n📍 Can you track down the secret bands across Mumbai before the real tour drops?\n\n👉 *Play now:* ${url}`;
+      const waText = `🚨 *FRED AGAIN.. INDIA TOUR BANDHUNT* 🎧\n\n🎯 Just unlocked *Level ${spotNumber}: ${locationName}!*\n\n📍 Can you track down the secret Fredagain bands across Mumbai before his live show?\n\n👉 *Play now:* ${siteUrl}`;
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`, "_blank");
     } else if (platform === "twitter") {
       window.open(
-        `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🎧 Just unlocked Level ${spotNumber} on @fredagainagain's India Tour Bandhunt! (${locationName})\n\nTrack down the secret bands:`)}&url=${encodeURIComponent(url)}`,
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🎧 Just unlocked Level ${spotNumber} on @fredagainagain's India Tour Bandhunt! (${locationName})\n\nTrack down the secret bands:`)}&url=${encodeURIComponent(siteUrl)}`,
         "_blank"
       );
     } else if (platform === "linkedin") {
-      const linkedinCaption = `🎧 Testing creative geolocation cartels with Fred Again's India Tour Bandhunt by taest.club.\n\nJust pinpointed Level ${spotNumber} at ${locationName}.\n\nExplore the interactive audio map here: ${url}\n\n#FredAgain #CreativeTech #WebAudio #InteractiveExperience #Mumbai`;
+      const linkedinCaption = "Taest club's Bombay Bandhunt | Show Fred Bombay's actual life. Win tickets to watch him live.";
       navigator.clipboard?.writeText(linkedinCaption);
-      setCopiedShare("Caption copied to clipboard! 📋 Opening LinkedIn...");
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
+      setCopiedShare("Caption copied! 📋 Opening LinkedIn...");
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(siteUrl)}`, "_blank");
+      setTimeout(() => setCopiedShare(null), 3000);
     } else if (platform === "facebook") {
       window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(`Just unlocked Level ${spotNumber}: ${locationName} on Fred Again's India Tour Bandhunt!`)}`,
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(siteUrl)}&quote=${encodeURIComponent(`Just unlocked Level ${spotNumber}: ${locationName} on Fred Again's India Tour Bandhunt!`)}`,
         "_blank"
       );
     } else if (platform === "instagram") {
-      // Trigger card download and open IG
-      handleDownloadCard();
-      setCopiedShare("Story Video Downloaded! 📸 Opening Instagram...");
+      const storyVideoUrl = `/assets/videos/stories/story_level_${spotNumber}.mp4`;
+      const captionText = "Show Fred Bombay's actual life. Win tickets to watch him live. @taest.club\nPlay now: https://bandhunt.taest.in";
+
+      // 1. Native Web Share API (Directly opens Instagram Story on mobile devices)
+      if (typeof navigator !== "undefined" && navigator.canShare) {
+        try {
+          const res = await fetch(storyVideoUrl);
+          const blob = await res.blob();
+          const file = new File([blob], `FredAgain_BombayBandhunt_Story_Level${spotNumber}.mp4`, {
+            type: "video/mp4",
+          });
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: "Fred Again.. Bombay Bandhunt",
+              text: captionText,
+            });
+            setCopiedShare("Story shared! 📸");
+            setTimeout(() => setCopiedShare(null), 3000);
+            return;
+          }
+        } catch (shareErr) {
+          console.log("Native share cancelled:", shareErr);
+        }
+      }
+
+      // 2. Fallback for Desktop/Browser: Download 9:16 Story Template & Open Instagram
+      const link = document.createElement("a");
+      link.href = storyVideoUrl;
+      link.download = `FredAgain_BombayBandhunt_Story_Level${spotNumber}.mp4`;
+      link.click();
+
+      navigator.clipboard?.writeText(captionText);
+      setCopiedShare("Story Video Ready! 📸 Copied @taest.club. Opening Instagram...");
+
       setTimeout(() => {
-        window.open("https://instagram.com/taest.club", "_blank");
-      }, 600);
+        window.open("https://www.instagram.com/", "_blank");
+      }, 700);
+      setTimeout(() => setCopiedShare(null), 4000);
     }
   };
 
@@ -243,23 +277,23 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           />
         </div>
 
-        {/* 3. Node Revealed Story Title & Lore - Center Aligned (Reduced vertical spacing) */}
-        <div className="flex flex-col gap-0.5 text-center items-center">
-          <h2 className="text-sm sm:text-base font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-tight whitespace-pre-line">
+        {/* 3. Node Revealed Story Title & Lore - Center Aligned (Tightened vertical spacing) */}
+        <div className="flex flex-col gap-0 text-center items-center">
+          <h2 className="text-sm sm:text-base font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-[1.1] whitespace-pre-line m-0 p-0">
             {displayTitle}
           </h2>
-          <p className="text-[11px] sm:text-xs font-sans text-gray-700 font-medium leading-tight mt-0.5">
+          <p className="text-[11px] sm:text-xs font-sans text-gray-700 font-medium leading-[1.15] mt-1 m-0 p-0">
             {cleanCatchphrase}
           </p>
         </div>
 
-        {/* 4. Hindi Branding Banner - Reduced vertical line spacing */}
-        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-2.5 sm:p-3 text-center flex flex-col gap-0.5 shadow-[2px_2px_0px_#1C1C1C]">
-          <p className="text-xs sm:text-sm font-sans font-black text-[#1C1C1C] leading-tight">
+        {/* 4. Hindi Branding Banner - Tightened vertical line spacing */}
+        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl py-1.5 px-3 text-center flex flex-col gap-0 shadow-[2px_2px_0px_#1C1C1C]">
+          <p className="text-xs sm:text-[13px] font-sans font-black text-[#1C1C1C] leading-[1.12] m-0">
             Your hunt for Fred&apos;s India tour bands,
             <br />
             just gave him his first real{" "}
-            <span className="text-[#FF2E9A] font-black text-sm sm:text-base inline-block px-0.5">
+            <span className="text-[#FF2E9A] font-black text-sm sm:text-[15px] inline-block px-0.5">
               इंडिया टूर
             </span>
             .

@@ -19,7 +19,7 @@ interface LiveDropTrackerProps {
 
 export const LiveDropTracker: React.FC<LiveDropTrackerProps> = ({
   emergencyZone,
-  meetupLocationName = "The Steps of Asiatic Society Library",
+  meetupLocationName = "Outside Taj Palace, Mumbai",
   remainingPasses = 4,
   totalPasses = 100,
   runnersCount = 100,
@@ -96,7 +96,7 @@ export const LiveDropTracker: React.FC<LiveDropTrackerProps> = ({
         <div className="flex flex-col gap-1">
           <div className="bg-white border-2 border-[#1C1C1C] px-3 py-2 rounded-xl flex items-center justify-between shadow-sm">
             <span className="font-black text-xs text-[#1C1C1C] truncate">
-              📍 2 runners spotted sprinting up Asiatic steps
+              📍 2 runners spotted sprinting outside Taj Palace main entrance
             </span>
             <span className="text-[10px] font-mono font-black text-gray-600 shrink-0 ml-2">
               1m ago
@@ -104,7 +104,7 @@ export const LiveDropTracker: React.FC<LiveDropTrackerProps> = ({
           </div>
           <div className="bg-white border-2 border-[#1C1C1C] px-3 py-2 rounded-xl flex items-center justify-between shadow-sm">
             <span className="font-black text-xs text-[#1C1C1C] truncate">
-              🔥 Clue 3 envelope opened near Horniman Circle
+              🔥 Clue 3 envelope opened near Gateway promenade
             </span>
             <span className="text-[10px] font-mono font-black text-gray-600 shrink-0 ml-2">
               3m ago

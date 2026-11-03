@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
 import { TOUR_NODES, TOUR_CONFIG } from "@/lib/config/tourSchedule";
+import { computeActivePhase } from "@/lib/config/phaseManager";
 import { TourScheduleResponse, TourPhase } from "@/types/hitmap";
-
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const now = Date.now();
 
-  // Allow query param override for demo/agency testing (?phase=PHASE_1_HUNT | PHASE_2_LIVE | PHASE_3_WAITING)
-  const overridePhase = searchParams.get("phase") as TourPhase | null;
-  const phase: TourPhase = overridePhase || TOUR_CONFIG.activePhase;
+  // Allow query param override for demo/testing (?phase=... or ?previewPhase=...)
+  const overridePhase = (searchParams.get("phase") || searchParams.get("previewPhase")) as TourPhase | null;
+  const phase: TourPhase =
+    overridePhase && (overridePhase === "PHASE_1_HUNT" || overridePhase === "PHASE_2_LIVE" || overridePhase === "PHASE_3_WAITING")
+      ? overridePhase
+      : computeActivePhase();
 
   const elapsedMs = Math.max(0, now - TOUR_CONFIG.tourStartTime);
   const nodeDurationMs = TOUR_CONFIG.nodeDurationMinutes * 60 * 1000;
@@ -56,8 +59,8 @@ export async function GET(request: Request) {
     nextCity: TOUR_CONFIG.nextCity,
     meetupCoordinates: TOUR_CONFIG.meetupCoordinates,
     liveDropMeta: {
-      emergencyZone: "FORT / ASIATIC SOCIETY SECTOR",
-      meetupLocationName: "Asiatic Society Library Steps, Fort",
+      emergencyZone: "COLABA / TAJ PALACE SECTOR",
+      meetupLocationName: "Outside Taj Palace, Mumbai",
       activeSightingsCount: 3,
       remainingPasses: 4,
       totalPasses: 10,
@@ -70,9 +73,9 @@ export async function GET(request: Request) {
         ticketsRemaining: 4,
       },
       sightings: [
-        { id: "s1", location: "Asiatic Library White Steps", timeAgo: "2m ago", status: "HOT" },
-        { id: "s2", location: "Horniman Circle Chai Stall", timeAgo: "5m ago", status: "VERIFIED" },
-        { id: "s3", location: "Flora Fountain Lamppost", timeAgo: "9m ago", status: "RECENT" },
+        { id: "s1", location: "Outside Taj Palace Main Gate", timeAgo: "2m ago", status: "HOT" },
+        { id: "s2", location: "Gateway of India Promenade", timeAgo: "5m ago", status: "VERIFIED" },
+        { id: "s3", location: "Colaba Causeway Cafe Leopold", timeAgo: "9m ago", status: "RECENT" },
       ],
     },
   };

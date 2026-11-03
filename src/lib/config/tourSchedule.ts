@@ -193,5 +193,5 @@ export const TOUR_CONFIG = {
   activePhase: "PHASE_1_HUNT" as const,
   activeCity: "mumbai",
   nextCity: "New Delhi",
-  meetupCoordinates: [72.835800, 18.932000] as [number, number], // Asiatic Society Library / Fort
+  meetupCoordinates: [72.833300, 18.921700] as [number, number], // Outside Taj Palace, Mumbai
 };

@@ -134,13 +134,13 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
           </span>
         </div>
 
-        {/* Event Details Card: Location & Date */}
-        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-3.5 sm:p-4 flex flex-col gap-2 w-full text-left shadow-[2.5px_2.5px_0px_#1C1C1C]">
-          <div className="flex items-center gap-2 text-xs sm:text-[13px] font-black text-[#1C1C1C]">
+        {/* Event Details Card: Location & Date (Center Aligned) */}
+        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-3.5 sm:p-4 flex flex-col items-center justify-center gap-2 w-full text-center shadow-[2.5px_2.5px_0px_#1C1C1C]">
+          <div className="flex items-center justify-center gap-2 text-xs sm:text-[13px] font-black text-[#1C1C1C]">
             <MapPin className="w-4 h-4 text-[#5D00FF] shrink-0" />
             <span>Outside Taj Palace, Mumbai</span>
           </div>
-          <div className="flex items-center gap-2 text-xs sm:text-[13px] font-black text-[#1C1C1C]">
+          <div className="flex items-center justify-center gap-2 text-xs sm:text-[13px] font-black text-[#1C1C1C]">
             <Calendar className="w-4 h-4 text-[#FF2E9A] shrink-0" />
             <span>Date: 14th November</span>
           </div>

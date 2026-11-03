@@ -109,6 +109,17 @@ export default function HitmapApp() {
     } catch {}
   }, [completedLevels]);
 
+  // Track founder preview mode from query param (?previewPhase=... or ?phase=...)
+  const [previewPhaseParam, setPreviewPhaseParam] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const p = sp.get("previewPhase") || sp.get("phase");
+      if (p) setPreviewPhaseParam(p);
+    }
+  }, []);
+
   // Ping Throttle
   const lastPingTimeRef = useRef<number>(0);
 
@@ -116,25 +127,31 @@ export default function HitmapApp() {
   const fetchSchedule = useCallback(
     async (phaseOverride?: TourPhase, levelIdxOverride?: number) => {
       try {
-        const targetPhase = phaseOverride || activePhase;
         const targetLevel =
           typeof levelIdxOverride === "number" ? levelIdxOverride : currentLevelIndexRef.current;
-        const url = `/api/tour/schedule?phase=${targetPhase}&nodeIndex=${targetLevel}`;
+        
+        let url = `/api/tour/schedule?nodeIndex=${targetLevel}`;
+        if (phaseOverride) {
+          url += `&phase=${phaseOverride}`;
+        } else if (typeof window !== "undefined") {
+          const sp = new URLSearchParams(window.location.search);
+          const preview = sp.get("previewPhase") || sp.get("phase");
+          if (preview) {
+            url += `&phase=${preview}`;
+          }
+        }
+
         const res = await fetch(url);
         if (res.ok) {
           const data: TourScheduleResponse = await res.json();
           setSchedule(data);
-          if (phaseOverride) {
-            setActivePhase(phaseOverride);
-          } else {
-            setActivePhase(data.phase);
-          }
+          setActivePhase(data.phase);
         }
       } catch (e) {
         console.error("Error fetching schedule:", e);
       }
     },
-    [activePhase]
+    []
   );
 
   useEffect(() => {
@@ -445,6 +462,19 @@ export default function HitmapApp() {
       {/* 1. CRT Grain Overlay */}
       <NoiseOverlay />
 
+      {/* Founder Testing / Preview Banner */}
+      {previewPhaseParam && (
+        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 bg-[#1C1C1C] text-[#CFFF04] border-2 border-[#CFFF04] rounded-full px-4 py-1.5 text-[11px] font-mono font-black flex items-center gap-3 shadow-[3px_3px_0px_rgba(0,0,0,0.5)] pointer-events-auto">
+          <span>👁️ PREVIEW MODE: {activePhase}</span>
+          <a
+            href="/"
+            className="px-2.5 py-0.5 rounded-full bg-[#CFFF04] hover:bg-white text-[#1C1C1C] text-[10px] font-black uppercase transition-colors"
+          >
+            Exit Preview ✕
+          </a>
+        </div>
+      )}
+
       {/* 2. Page 1 Landing Screen Modal (No background emojis, headphones unlock CTA) */}
       {!audioUnlocked && (
         <LandingModal onStart={handleLandingStart} />
@@ -563,7 +593,7 @@ export default function HitmapApp() {
                 <div className="w-full sm:w-auto max-w-sm lg:max-w-md pointer-events-auto">
                   <LiveDropTracker
                     emergencyZone={schedule.liveDropMeta.emergencyZone}
-                    meetupLocationName="The Steps of Asiatic Society Library"
+                    meetupLocationName={schedule.liveDropMeta.meetupLocationName || "Outside Taj Palace, Mumbai"}
                     remainingPasses={schedule.liveDropMeta.remainingPasses}
                     sightings={schedule.liveDropMeta.sightings}
                   />
