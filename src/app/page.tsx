@@ -418,7 +418,12 @@ export default function HitmapApp() {
   }, [radar.verified, radar.distanceMeters, radar.bearing]);
 
   // Handle landing start
-  const handleLandingStart = async () => {
+  const handleLandingStart = async (phone?: string) => {
+    if (phone) {
+      try {
+        localStorage.setItem("bandhunt_player_phone", phone);
+      } catch {}
+    }
     try {
       const engine = getHitmapAudioEngine();
       await engine.unlockAudio();

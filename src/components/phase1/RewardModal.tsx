@@ -128,7 +128,14 @@ export const RewardModal: React.FC<RewardModalProps> = ({
   // Social Share & Crowdsource Pitch States
   const [copiedShare, setCopiedShare] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState("Mumbai");
-  const [pitchText, setPitchText] = useState("");
+  const [pitchText, setPitchText] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("bandhunt_player_phone") || "";
+      } catch {}
+    }
+    return "";
+  });
   const [pitchSubmitted, setPitchSubmitted] = useState(false);
 
   const currentImage = imageUrl || `/assets/nodes/spot${spotNumber}_andheri.jpg`;
@@ -236,23 +243,23 @@ export const RewardModal: React.FC<RewardModalProps> = ({
           />
         </div>
 
-        {/* 3. Node Revealed Story Title & Lore - Center Aligned */}
-        <div className="flex flex-col gap-1 text-center items-center">
-          <h2 className="text-base sm:text-lg font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-snug whitespace-pre-line">
+        {/* 3. Node Revealed Story Title & Lore - Center Aligned (Reduced vertical spacing) */}
+        <div className="flex flex-col gap-0.5 text-center items-center">
+          <h2 className="text-sm sm:text-base font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-tight whitespace-pre-line">
             {displayTitle}
           </h2>
-          <p className="text-xs font-sans text-gray-700 font-medium leading-relaxed">
+          <p className="text-[11px] sm:text-xs font-sans text-gray-700 font-medium leading-tight mt-0.5">
             {cleanCatchphrase}
           </p>
         </div>
 
-        {/* 4. Hindi Branding Banner - Capital F in Fred's */}
-        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-3.5 text-center flex flex-col gap-1 shadow-[2px_2px_0px_#1C1C1C]">
-          <p className="text-sm sm:text-base font-sans font-black text-[#1C1C1C] leading-snug">
+        {/* 4. Hindi Branding Banner - Reduced vertical line spacing */}
+        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-2.5 sm:p-3 text-center flex flex-col gap-0.5 shadow-[2px_2px_0px_#1C1C1C]">
+          <p className="text-xs sm:text-sm font-sans font-black text-[#1C1C1C] leading-tight">
             Your hunt for Fred&apos;s India tour bands,
             <br />
             just gave him his first real{" "}
-            <span className="text-[#FF2E9A] font-black text-base sm:text-lg inline-block px-1">
+            <span className="text-[#FF2E9A] font-black text-sm sm:text-base inline-block px-0.5">
               इंडिया टूर
             </span>
             .
@@ -416,7 +423,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
             className="w-full py-3.5 px-4 rounded-xl bg-[#FFE600] hover:bg-[#fed900] active:scale-98 text-[#1C1C1C] font-black text-xs sm:text-sm uppercase border-2 border-[#1C1C1C] shadow-[4px_4px_0px_#1C1C1C] flex items-center justify-center gap-2 transition-all cursor-pointer animate-bounce"
           >
             <Ticket className="w-4 h-4" />
-            <span>That’s it. You just unlocked the location of Mumbai’s offline Bandhunt. ➔</span>
+            <span>That’s it! Tap here to grab your discount code for the offline Bombay Bandhunt. ➔</span>
           </button>
         ) : secondsLeft > 0 ? (
           <div className="w-full py-3 px-4 rounded-xl bg-[#F1F5F9] border-2 border-[#1C1C1C] text-[#1C1C1C] font-mono font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">

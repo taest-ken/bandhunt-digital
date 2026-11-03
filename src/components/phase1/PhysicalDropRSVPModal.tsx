@@ -1,8 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { X, Calendar, Bell, Sparkles, CheckCircle2, Ticket, Users, MessageCircle, MapPin, Instagram } from "lucide-react";
+import React, { useState } from "react";
+import {
+  X,
+  Calendar,
+  Sparkles,
+  Ticket,
+  MessageCircle,
+  MapPin,
+  Instagram,
+  Copy,
+  Check,
+  ExternalLink,
+} from "lucide-react";
 import { BrandCollabLogo } from "@/components/ui/BrandCollabLogo";
 
 interface PhysicalDropRSVPModalProps {
@@ -10,74 +20,59 @@ interface PhysicalDropRSVPModalProps {
 }
 
 export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ onClose }) => {
-  const [contact, setContact] = useState("");
-  const [selectedCity, setSelectedCity] = useState("Mumbai");
-  const [submitted, setSubmitted] = useState(false);
-  const [registeredCount, setRegisteredCount] = useState(21);
+  const [copied, setCopied] = useState(false);
 
-  // Fetch live count from backend (fallback to minimum 21)
-  useEffect(() => {
-    fetch("/api/submissions")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && typeof data.totalPitches === "number") {
-          setRegisteredCount(Math.max(21, 21 + data.totalPitches));
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const handleCopyCoupon = () => {
+    navigator.clipboard?.writeText("TAESTACTUALLIFE20");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contact.trim()) return;
-
+  const handleRSVP = () => {
+    // Retrieve player phone from localStorage if stored from landing page
+    let playerPhone = "";
     try {
-      const res = await fetch("/api/submissions", {
+      playerPhone = localStorage.getItem("bandhunt_player_phone") || "";
+    } catch {}
+
+    // Track this offline RSVP in database (List 2: Mumbai Offline Bandhunt Registrations)
+    try {
+      fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          contact: playerPhone || "Registered Player",
           suggestedCity: "Mumbai",
-          contact: contact.trim(),
-          experienceDescription: contact.trim(),
-          submittedBy: "Mumbai Offline Bandhunt Early Access",
           source: "mumbai_offline_registration",
+          submittedBy: "Mumbai Offline RSVP (offlyn.life)",
+          levelUnlocked: 6,
         }),
-      });
+      }).catch((e) => console.warn("RSVP tracking error:", e));
+    } catch {}
 
-      if (res.ok) {
-        setSubmitted(true);
-        setRegisteredCount((prev) => prev + 1);
-      }
-    } catch (err) {
-      console.error("RSVP error:", err);
-      // Still show confirmed for great UX
-      setSubmitted(true);
-      setRegisteredCount((prev) => prev + 1);
-    }
+    // Redirect to the official Offlyn event page
+    window.open("https://offlyn.life/e/PtKgUuh", "_blank");
   };
 
   const addToGoogleCalendar = () => {
-    const title = encodeURIComponent("Fred Again.. Offline Bandhunt: Mumbai Chapter");
+    const title = encodeURIComponent("Fred Again.. Offline Bombay Bandhunt");
     const details = encodeURIComponent(
-      "The official Mumbai offline Bandhunt by taest.club! Real concert wristbands will be given away. Unlocked location: Asiatic Society Library."
+      "The official offline Bombay Bandhunt by taest.club! Use coupon code: TAESTACTUALLIFE20 for a flat discount on our offline scavenger hunt experience at https://offlyn.life/e/PtKgUuh"
     );
-    const location = encodeURIComponent("Asiatic Society Library, Fort, Mumbai, Maharashtra, India");
-    const start = "20261101T110000Z";
-    const end = "20261101T150000Z";
+    const location = encodeURIComponent("Outside Taj Palace, Mumbai, Maharashtra, India");
+    const start = "20261114T110000Z";
+    const end = "20261114T150000Z";
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
     window.open(url, "_blank");
   };
 
-  // Ambiguous progress calculation: starts at 64% at count 21, gradually grows, capped at 88%
-  const progressPercent = Math.min(88, Math.max(64, 64 + (registeredCount - 21) * 1.5));
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-150 overflow-y-auto">
-      <div className="relative w-full max-w-md bg-white border-[3.5px] border-[#1C1C1C] rounded-3xl p-6 sm:p-7 shadow-[8px_8px_0px_#1C1C1C] overflow-hidden flex flex-col gap-4 my-auto">
+      <div className="relative w-full max-w-md bg-white border-[3.5px] border-[#1C1C1C] rounded-3xl p-5 sm:p-7 shadow-[8px_8px_0px_#1C1C1C] overflow-hidden flex flex-col items-center gap-3.5 sm:gap-4 my-auto text-center">
         {/* Top Header: Centered BrandCollabLogo & Close Button */}
-        <div className="relative flex items-center justify-between border-b-2 border-[#1C1C1C]/15 pb-2.5">
+        <div className="relative w-full flex items-center justify-between border-b-2 border-[#1C1C1C]/15 pb-2.5">
           <div className="w-6" /> {/* Spacer for symmetry */}
-          
+
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center">
             <BrandCollabLogo size="md" />
           </div>
@@ -91,108 +86,86 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
         </div>
 
         {/* Main Title & Unlocked Announcement */}
-        <div className="flex flex-col gap-1 text-center items-center">
+        <div className="flex flex-col gap-1.5 text-center items-center w-full">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono font-black uppercase px-2.5 py-0.5 rounded bg-[#CFFF04] text-[#1C1C1C] border border-[#1C1C1C] shadow-[1.5px_1.5px_0px_#1C1C1C]">
               OFFLINE BANDHUNT UNLOCKED 🎟️
             </span>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-snug mt-1">
-            CONGRATULATIONS, MUMBAI OFFLINE BANDHUNT LOCATION UNLOCKED!
+          <h2 className="text-lg sm:text-xl font-black font-sans uppercase tracking-tight text-[#1C1C1C] leading-snug">
+            Congratulations! You’re all set to attend the offline Bombay Bandhunt.
           </h2>
-          <p className="text-xs font-sans text-gray-700 font-medium leading-relaxed">
-            Offline bandhunt is where real concert wristbands will be given away.
-          </p>
         </div>
 
-        {/* Event Details Card: Unlocked Location pushed to top, followed by date */}
-        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-3 shadow-[3px_3px_0px_#1C1C1C]">
-          <div className="flex items-center gap-2.5 text-xs font-black text-[#1C1C1C]">
-            <MapPin className="w-4 h-4 text-[#5D00FF] shrink-0" />
-            <span>UNLOCKED LOCATION: ASIATIC SOCIETY LIBRARY</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs font-black text-[#1C1C1C]">
-            <Calendar className="w-4 h-4 text-[#FF2E9A] shrink-0" />
-            <span>DATE: TO BE ANNOUNCED</span>
-          </div>
+        {/* Subheading & Copiable Coupon Code Box */}
+        <div className="flex flex-col items-center gap-1.5 w-full bg-[#F5F8FF] border-2 border-[#1C1C1C] rounded-2xl p-3 sm:p-3.5 shadow-[2.5px_2.5px_0px_#1C1C1C]">
+          <span className="text-xs sm:text-[13px] font-sans font-bold text-gray-800">
+            Use the coupon code:
+          </span>
 
-          {/* Ambiguous Total Capacity with Minimum 21 Count */}
-          <div className="flex flex-col gap-1.5 pt-2 border-t border-[#1C1C1C]/10">
-            <div className="flex items-center justify-between text-xs font-black text-[#1C1C1C]">
-              <span className="flex items-center gap-1.5">
-                <Ticket className="w-4 h-4 text-[#FF2E9A]" />
-                <span className="font-mono text-[11px] bg-[#CFFF04] px-2 py-0.5 rounded border border-[#1C1C1C]">
-                  {registeredCount} ALREADY REGISTERED
-                </span>
-              </span>
-              <span className="text-[10px] font-mono font-bold text-[#FF0040] uppercase animate-pulse">
-                Slots exhausting rapidly
-              </span>
-            </div>
-
-            {/* Dynamic Progress bar (never full, no % text) */}
-            <div className="w-full h-3 rounded-full bg-gray-200 border border-[#1C1C1C] overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#5D00FF] to-[#FF2E9A] rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <div className="flex justify-start text-[9px] font-mono text-gray-500">
-              <span>Demand Accelerating</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Form or Confirmation */}
-        {submitted ? (
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="w-full bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-full py-2.5 px-4 text-center flex items-center justify-center gap-2 shadow-[2px_2px_0px_#1C1C1C]">
-              <CheckCircle2 className="w-4 h-4 text-[#1C1C1C]" />
-              <span className="text-xs font-black uppercase text-[#1C1C1C]">
-                YOU&apos;RE ON THE TAEST INVITE LIST! 🎉
-              </span>
-            </div>
+          {/* Interactive Copiable Code Badge */}
+          <div className="relative flex items-center justify-between gap-2.5 w-full max-w-[260px] bg-[#FFE600] border-2 border-[#1C1C1C] rounded-xl px-3 py-1.5 shadow-[2px_2px_0px_#1C1C1C]">
+            <span className="font-mono font-black text-xs sm:text-sm tracking-wider text-[#1C1C1C] select-all">
+              TAESTACTUALLIFE20
+            </span>
             <button
               type="button"
-              onClick={() => {
-                setSubmitted(false);
-                setContact("");
-              }}
-              className="text-[10px] font-mono font-bold text-gray-500 hover:text-black underline cursor-pointer"
+              onClick={handleCopyCoupon}
+              className="px-2 py-0.5 rounded-lg bg-white hover:bg-gray-100 active:scale-95 border border-[#1C1C1C] text-[10px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1 cursor-pointer transition-all shadow-[1px_1px_0px_#1C1C1C]"
+              title="Copy coupon code"
             >
-              + Register another number / email
+              {copied ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-600" />
+                  <span className="text-emerald-700">COPIED</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" />
+                  <span>COPY</span>
+                </>
+              )}
             </button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-black uppercase text-[#1C1C1C] flex items-center gap-1.5">
-                <Bell className="w-3.5 h-3.5 text-[#FF2E9A]" />
-                <span>Claim the last few spots for Mumbai Offline Bandhunt.</span>
-              </label>
-            </div>
 
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                placeholder="WhatsApp number or email for Mumbai drop alerts..."
-                required
-                className="flex-1 px-3.5 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-bold text-[#1C1C1C] placeholder-gray-400 focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 rounded-xl bg-[#CFFF04] hover:bg-[#b8e600] text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] cursor-pointer whitespace-nowrap active:scale-95"
-              >
-                CLAIM PASS
-              </button>
-            </div>
-          </form>
-        )}
+          <span className="text-xs sm:text-[12px] font-sans font-medium text-gray-700 leading-snug text-center">
+            for a flat discount on our offline scavenger hunt experience.
+          </span>
+        </div>
 
-        {/* Calendar Add Button (Precedes social links) */}
+        {/* Event Details Card: Location & Date */}
+        <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-3.5 sm:p-4 flex flex-col gap-2 w-full text-left shadow-[2.5px_2.5px_0px_#1C1C1C]">
+          <div className="flex items-center gap-2 text-xs sm:text-[13px] font-black text-[#1C1C1C]">
+            <MapPin className="w-4 h-4 text-[#5D00FF] shrink-0" />
+            <span>Outside Taj Palace, Mumbai</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs sm:text-[13px] font-black text-[#1C1C1C]">
+            <Calendar className="w-4 h-4 text-[#FF2E9A] shrink-0" />
+            <span>Date: 14th November</span>
+          </div>
+        </div>
+
+        {/* RSVP Section (No input box, redirects to offlyn.life) */}
+        <div className="bg-[#FFF8F0] border-2 border-[#1C1C1C] rounded-2xl p-3 sm:p-3.5 flex flex-col gap-2.5 w-full shadow-[3px_3px_0px_#1C1C1C]">
+          <div className="flex items-center justify-center text-center">
+            <span className="text-xs sm:text-[13px] font-sans font-black uppercase text-[#FF0040] flex items-center justify-center gap-1.5 animate-pulse">
+              <Sparkles className="w-3.5 h-3.5 text-[#FF0040]" />
+              <span>Only a few spots left for the offline Bombay Bandhunt</span>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleRSVP}
+            className="w-full py-3.5 px-4 rounded-xl bg-[#CFFF04] hover:bg-[#bcf000] text-[#1C1C1C] font-black text-sm uppercase border-[2.5px] border-[#1C1C1C] shadow-[3.5px_3.5px_0px_#1C1C1C] flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 y2k-btn-bounce"
+          >
+            <span>RSVP NOW!</span>
+            <ExternalLink className="w-4 h-4 stroke-[2.5]" />
+          </button>
+        </div>
+
+        {/* Calendar Add Button */}
         <button
           onClick={addToGoogleCalendar}
           className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-gray-50 text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] flex items-center justify-center gap-2 cursor-pointer transition-colors"
@@ -201,8 +174,8 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
           <span>ADD TO GOOGLE CALENDAR</span>
         </button>
 
-        {/* Action Links Row (Moved to the bottom): WhatsApp + Instagram */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Action Links Row: WhatsApp + Instagram */}
+        <div className="grid grid-cols-2 gap-2 w-full">
           {/* Join WA Channel */}
           <a
             href="https://chat.whatsapp.com/EM12Mf0PE6J007pdF1w1Ne?s=cl&p=a&mlu=4&ilr=4"

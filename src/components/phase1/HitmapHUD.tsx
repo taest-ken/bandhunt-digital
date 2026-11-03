@@ -125,7 +125,7 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
             </div>
           </div>
 
-          {/* Offline Bandhunt Button: "Cross level 6 to unlock “Offline Bandhunt” details" */}
+          {/* Offline Bandhunt Button: "Cross level 6 to unlock discount code for the offline Bombay Bandhunt." */}
           <div className="relative">
             <button
               onClick={handleOfflineDetailsClick}
@@ -138,18 +138,18 @@ export const HitmapHUD: React.FC<HitmapHUDProps> = ({
               <Ticket className="w-3.5 h-3.5 text-[#FF2E9A]" />
               <span className="hidden sm:inline">
                 {isAllCompleted
-                  ? "OFFLINE BANDHUNT DETAILS (UNLOCKED! 🎉)"
-                  : "Cross level 6 to unlock “Offline Bandhunt” details"}
+                  ? "OFFLINE BOMBAY BANDHUNT (UNLOCKED! 🎉)"
+                  : "Cross level 6 to unlock discount code for the offline Bombay Bandhunt."}
               </span>
               <span className="sm:hidden">
-                {isAllCompleted ? "OFFLINE DETAILS 🎉" : "UNLOCK AT LEVEL 6 🔒"}
+                {isAllCompleted ? "DISCOUNT CODE 🎉" : "UNLOCK AT LEVEL 6 🔒"}
               </span>
             </button>
 
             {/* Popup message tooltip when tapped before clearing Level 6 */}
             {showLockedTooltip && (
-              <div className="absolute top-full right-0 mt-2 z-50 w-64 p-2.5 bg-[#1C1C1C] text-white text-[11px] font-bold rounded-xl border-2 border-[#CFFF04] shadow-[4px_4px_0px_#CFFF04] animate-in fade-in slide-in-from-top-1 text-center">
-                <span>🔒 Complete all 6 levels to unlock Mumbai&apos;s offline Bandhunt place, date &amp; time!</span>
+              <div className="absolute top-full right-0 mt-2 z-50 w-72 p-2.5 bg-[#1C1C1C] text-white text-[11px] font-bold rounded-xl border-2 border-[#CFFF04] shadow-[4px_4px_0px_#CFFF04] animate-in fade-in slide-in-from-top-1 text-center">
+                <span>🔒 Cross level 6 to unlock discount code for the offline Bombay Bandhunt!</span>
               </div>
             )}
           </div>

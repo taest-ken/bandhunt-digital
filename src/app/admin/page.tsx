@@ -399,14 +399,14 @@ export default function AdminDashboardPage() {
                     LIST 1
                   </span>
                   <h2 className="text-sm sm:text-base font-black uppercase tracking-tight text-[#1C1C1C]">
-                    City Specific Invite Requests
+                    Registered Players &amp; City Invite Requests
                   </h2>
                   <span className="text-xs font-mono font-bold text-gray-500">
                     ({filteredList1.length} records)
                   </span>
                 </div>
                 <p className="text-xs text-gray-600 font-medium mt-0.5">
-                  General interest signups from level reward screens across cities (Mumbai, Delhi, Bengaluru).
+                  Player mobile registrations from landing page &amp; city invite requests across cities (Mumbai, Delhi, Bengaluru).
                 </p>
               </div>
 
@@ -520,7 +520,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
                 <p className="text-xs text-gray-700 font-medium mt-0.5">
-                  Exclusive list of attendees who unlocked Level 6 and claimed spot early access for the Asiatic Society Library offline event.
+                  Exclusive list of attendees who unlocked Level 6 and RSVP&apos;d for the Outside Taj Palace offline event.
                 </p>
               </div>
 
@@ -537,7 +537,7 @@ export default function AdminDashboardPage() {
             <div className="p-3 sm:p-4 border-b border-[#1C1C1C]/15 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono font-black uppercase bg-[#FFE600] border border-[#1C1C1C] px-2 py-0.5 rounded">
-                  📍 LOCATION: ASIATIC SOCIETY LIBRARY, FORT, MUMBAI
+                  📍 LOCATION: OUTSIDE TAJ PALACE, MUMBAI
                 </span>
               </div>
 
@@ -586,7 +586,7 @@ export default function AdminDashboardPage() {
                           </span>
                         </td>
                         <td className="py-2.5 px-4 font-bold text-gray-700">
-                          Asiatic Library, Mumbai
+                          Outside Taj Palace, Mumbai
                         </td>
                         <td className="py-2.5 px-4 text-gray-500 uppercase text-[10px]">
                           {sub.source || "mumbai_offline_registration"}
