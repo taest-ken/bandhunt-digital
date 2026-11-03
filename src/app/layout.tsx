@@ -53,7 +53,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.css" />
       </head>
-      <body className="antialiased bg-[#050505] text-[#ededed] overflow-hidden select-none">
+      <body className="antialiased bg-[#050505] text-[#ededed] select-none">
         {children}
       </body>
     </html>

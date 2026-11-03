@@ -449,7 +449,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen w-full bg-[#F8FAFC] text-[#1C1C1C] p-4 sm:p-8 font-sans overflow-y-auto select-text pb-32">
+    <main className="fixed inset-0 w-full h-full bg-[#F8FAFC] text-[#1C1C1C] p-4 sm:p-8 font-sans overflow-y-auto overflow-x-hidden select-text pb-40">
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
         {/* ========================================================================= */}
         {/* 1. TOP HEADER                                                             */}

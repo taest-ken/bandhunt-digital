@@ -30,6 +30,8 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #CFFF04 #F1F5F9;
 }
 
 /* Custom Y2K Scrollbar */
