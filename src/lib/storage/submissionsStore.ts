@@ -6,6 +6,7 @@ import { PitchSubmission } from "@/types/hitmap";
 // Global in-memory cache to retain submissions across warm serverless invocations
 declare global {
   var __bandhunt_submissions: PitchSubmission[] | undefined;
+  var __last_webhook_status: { success: boolean; status?: number; error?: string; checkedAt: number } | undefined;
 }
 
 if (!globalThis.__bandhunt_submissions) {
@@ -26,7 +27,8 @@ function getKvConfig() {
 }
 
 /**
- * Reads submissions from Vercel KV / Upstash, falling back to disk (/tmp and src/data)
+ * Reads submissions from Vercel KV / Upstash, falling back to disk (/tmp and src/data),
+ * and finally checking Google Sheets if configured and local stores are empty.
  */
 export async function getSubmissions(): Promise<PitchSubmission[]> {
   const kv = getKvConfig();
@@ -79,7 +81,7 @@ export async function getSubmissions(): Promise<PitchSubmission[]> {
     if (fs.existsSync(PRIMARY_DATA_PATH)) {
       const data = fs.readFileSync(PRIMARY_DATA_PATH, "utf-8");
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         globalThis.__bandhunt_submissions = parsed;
         return parsed;
       }
@@ -88,13 +90,44 @@ export async function getSubmissions(): Promise<PitchSubmission[]> {
     console.warn("Error reading primary submissions file:", err);
   }
 
+  // 5. If local storage is empty on a fresh serverless cold-start, pull from Google Sheets via GET
+  const webhookUrl = process.env.RSVP_WEBHOOK_URL;
+  if (webhookUrl) {
+    try {
+      const gRes = await fetch(webhookUrl, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        redirect: "follow",
+        cache: "no-store",
+      });
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        if (Array.isArray(gData) && gData.length > 0) {
+          globalThis.__bandhunt_submissions = gData;
+          return gData;
+        }
+      }
+    } catch (gErr) {
+      // Quiet fail if doGet is not supported by webhook
+    }
+  }
+
   return [];
+}
+
+export interface AddSubmissionResult {
+  updatedList: PitchSubmission[];
+  webhookResult?: {
+    success: boolean;
+    status?: number;
+    error?: string;
+  };
 }
 
 /**
  * Persists a new submission across Cloud KV, /tmp disk, and optional Webhook (Google Sheets)
  */
-export async function addSubmission(submission: PitchSubmission): Promise<PitchSubmission[]> {
+export async function addSubmission(submission: PitchSubmission): Promise<AddSubmissionResult> {
   const current = await getSubmissions();
   
   // Deduplicate: If same contact submitted within last 3 minutes for same source, update instead of duplicate
@@ -156,24 +189,60 @@ export async function addSubmission(submission: PitchSubmission): Promise<PitchS
   }
 
   // 4. Stream to Webhook (Google Sheets, Zapier, Make, Airtable)
+  let webhookResult: { success: boolean; status?: number; error?: string } | undefined = undefined;
   const webhookUrl = process.env.RSVP_WEBHOOK_URL;
+
   if (webhookUrl) {
     try {
-      fetch(webhookUrl, {
+      const now = new Date();
+      const istTimeStr = now.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+      const categoryName =
+        submission.source === "mumbai_offline_registration" ||
+        submission.submittedBy === "Mumbai Offline RSVP (offlyn.life)"
+          ? "List 2: Mumbai Offline Bandhunt Registration"
+          : "List 1: City Specific Invite Request";
+
+      const payload = {
+        ...submission,
+        timestamp: istTimeStr,
+        createdAt: submission.createdAt || now.toISOString(),
+        contact: submission.contact || "",
+        phone: submission.contact || "",
+        email: submission.contact || "",
+        city: submission.suggestedCity || "Mumbai",
+        suggestedCity: submission.suggestedCity || "Mumbai",
+        levelUnlocked: submission.levelUnlocked ? `Level ${submission.levelUnlocked}` : "All",
+        source: submission.source || "web",
+        category: categoryName,
+        submittedBy: submission.submittedBy || "Player",
+        serverTimestamp: now.toISOString(),
+        totalSubmissionsNow: updatedList.length,
+      };
+
+      const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...submission,
-          serverTimestamp: new Date().toISOString(),
-          totalSubmissionsNow: updatedList.length,
-        }),
-      }).catch((wErr) => console.warn("Webhook streaming warning:", wErr));
-    } catch (e) {
-      console.warn("Webhook fire error:", e);
+        redirect: "follow",
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        webhookResult = { success: true, status: res.status };
+        globalThis.__last_webhook_status = { success: true, status: res.status, checkedAt: Date.now() };
+      } else {
+        const txt = await res.text().catch(() => "");
+        console.warn(`Webhook response error (${res.status}):`, txt);
+        webhookResult = { success: false, status: res.status, error: `HTTP ${res.status}` };
+        globalThis.__last_webhook_status = { success: false, status: res.status, error: `HTTP ${res.status}`, checkedAt: Date.now() };
+      }
+    } catch (e: any) {
+      console.warn("Webhook fire network error:", e);
+      webhookResult = { success: false, error: e?.message || "Network error" };
+      globalThis.__last_webhook_status = { success: false, error: e?.message, checkedAt: Date.now() };
     }
   }
 
-  return updatedList;
+  return { updatedList, webhookResult };
 }
 
 /**
@@ -181,9 +250,21 @@ export async function addSubmission(submission: PitchSubmission): Promise<PitchS
  */
 export function getStorageDiagnostics() {
   const kv = getKvConfig();
+  const lastWebhook = globalThis.__last_webhook_status;
+  
+  let webhookStatus = "NOT_CONFIGURED";
+  if (process.env.RSVP_WEBHOOK_URL) {
+    if (lastWebhook) {
+      webhookStatus = lastWebhook.success ? "ACTIVE" : `ERROR_${lastWebhook.status || "FAIL"}`;
+    } else {
+      webhookStatus = "CONFIGURED";
+    }
+  }
+
   return {
-    adapter: kv ? "VERCEL_KV_UPSTASH" : "SERVERLESS_FALLBACK",
+    adapter: kv ? "VERCEL_KV_UPSTASH" : "SERVERLESS_RESILIENT",
     hasWebhook: !!process.env.RSVP_WEBHOOK_URL,
+    webhookStatus,
     tmpFileExists: fs.existsSync(TMP_DATA_PATH),
     primaryFileExists: fs.existsSync(PRIMARY_DATA_PATH),
     inMemoryCount: globalThis.__bandhunt_submissions?.length || 0,

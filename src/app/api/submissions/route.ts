@@ -32,13 +32,14 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    const updatedList = await addSubmission(newSubmission);
+    const { updatedList, webhookResult } = await addSubmission(newSubmission);
 
     return NextResponse.json(
       {
         success: true,
         message: "Registration recorded successfully! You're on the taest invite list.",
         submissionCount: updatedList.length,
+        webhook: webhookResult,
         diagnostics: getStorageDiagnostics(),
       },
       {

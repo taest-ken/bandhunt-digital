@@ -52,6 +52,7 @@ interface AdminData {
   diagnostics?: {
     adapter: string;
     hasWebhook: boolean;
+    webhookStatus?: string;
     tmpFileExists: boolean;
     primaryFileExists: boolean;
     inMemoryCount: number;
@@ -264,10 +265,25 @@ export default function AdminDashboardPage() {
       });
 
       if (res.ok) {
-        setTestSuccessMsg(`Recorded: ${testPhone.trim()} (${testCity})`);
+        const json = await res.json();
+        if (json.webhook?.status === 403) {
+          setTestSuccessMsg(
+            `⚠️ Saved in database, but Google Sheets returned 403 Forbidden! In your Apps Script Deploy settings, set 'Who has access' to 'Anyone'.`
+          );
+        } else if (json.webhook?.success) {
+          setTestSuccessMsg(
+            `🎉 Recorded: ${testPhone.trim()} (${testCity}) — Successfully synced to Google Sheets in real-time!`
+          );
+        } else if (json.webhook?.error) {
+          setTestSuccessMsg(
+            `⚠️ Saved in database, but Google Sheets error: ${json.webhook.error}`
+          );
+        } else {
+          setTestSuccessMsg(`Recorded: ${testPhone.trim()} (${testCity})`);
+        }
         setTestPhone("");
         handleRefresh();
-        setTimeout(() => setTestSuccessMsg(null), 4000);
+        setTimeout(() => setTestSuccessMsg(null), 8000);
       } else {
         alert("Failed to create test entry");
       }
@@ -451,12 +467,29 @@ export default function AdminDashboardPage() {
               STORAGE ENGINE: {data?.diagnostics?.adapter || "SERVERLESS RESILIENT"}
             </span>
 
-            <span className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border ${
-              data?.diagnostics?.hasWebhook
-                ? "bg-purple-100 text-purple-800 border-purple-600"
-                : "bg-gray-100 text-gray-700 border-gray-400"
-            }`}>
-              GOOGLE SHEETS SYNC: {data?.diagnostics?.hasWebhook ? "LIVE CONNECTED 🟢" : "OPTIONAL (CLICK ABOVE)"}
+            <span
+              className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border ${
+                data?.diagnostics?.webhookStatus === "ACTIVE"
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-600"
+                  : data?.diagnostics?.webhookStatus?.startsWith("ERROR_403")
+                  ? "bg-red-100 text-red-800 border-red-600 animate-pulse font-extrabold"
+                  : data?.diagnostics?.webhookStatus?.startsWith("ERROR_")
+                  ? "bg-red-100 text-red-800 border-red-600"
+                  : data?.diagnostics?.hasWebhook
+                  ? "bg-purple-100 text-purple-800 border-purple-600"
+                  : "bg-gray-100 text-gray-700 border-gray-400"
+              }`}
+            >
+              GOOGLE SHEETS SYNC:{" "}
+              {data?.diagnostics?.webhookStatus === "ACTIVE"
+                ? "LIVE CONNECTED 🟢"
+                : data?.diagnostics?.webhookStatus?.startsWith("ERROR_403")
+                ? "⚠️ 403 FORBIDDEN (Set 'Who has access: Anyone')"
+                : data?.diagnostics?.webhookStatus?.startsWith("ERROR_")
+                ? `⚠️ ${data.diagnostics.webhookStatus}`
+                : data?.diagnostics?.hasWebhook
+                ? "CONFIGURED 🟡 (Run Test Below)"
+                : "OPTIONAL (CLICK ABOVE)"}
             </span>
 
             <span className="text-[10px] font-mono font-bold text-gray-500">
@@ -1028,22 +1061,71 @@ export default function AdminDashboardPage() {
             <div className="bg-[#F5F8FF] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-3 shadow-[2px_2px_0px_#1C1C1C]">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-black uppercase text-[#5D00FF]">
-                  ★ OPTION 1: GOOGLE SHEETS LIVE SYNC (RECOMMENDED)
+                  ★ OPTION 1: GOOGLE SHEETS LIVE 2-WAY SYNC (RECOMMENDED)
                 </span>
                 <button
                   onClick={() => {
                     const code = `function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  sheet.appendRow([
-    data.createdAt || new Date().toISOString(),
-    data.contact || data.experienceDescription || "",
-    data.suggestedCity || "Mumbai",
-    data.levelUnlocked ? "Level " + data.levelUnlocked : "All",
-    data.source || "web",
-    data.submittedBy || "Player"
-  ]);
-  return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var data = {};
+    if (e && e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    } else if (e && e.parameter) {
+      data = e.parameter;
+    }
+
+    var timestamp = data.timestamp || data.createdAt || new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    var contact = String(data.contact || data.phone || data.email || data.experienceDescription || "");
+    var city = String(data.city || data.suggestedCity || "Mumbai");
+    var level = String(data.levelUnlocked || "All");
+    var category = String(data.category || (data.source === "mumbai_offline_registration" ? "List 2: Mumbai Offline Bandhunt Registration" : "List 1: City Specific Invite Request"));
+    var source = String(data.source || "web");
+    var submitter = String(data.submittedBy || "Player");
+
+    var cleanContact = contact.startsWith("+") || contact.startsWith("0") ? "'" + contact : contact;
+
+    sheet.appendRow([
+      timestamp,
+      cleanContact,
+      city,
+      level,
+      category,
+      source,
+      submitter
+    ]);
+
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Row added" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", error: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var rows = sheet.getDataRange().getValues();
+    if (!rows || rows.length <= 1) {
+      return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+    }
+    var list = [];
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+      if (r[1]) {
+        list.push({
+          createdAt: String(r[0]),
+          contact: String(r[1]).replace(/^'/, ''),
+          suggestedCity: String(r[2] || "Mumbai"),
+          levelUnlocked: r[3] && !isNaN(parseInt(r[3])) ? parseInt(r[3]) : undefined,
+          source: String(r[5] || r[4] || "google_sheets"),
+          submittedBy: String(r[6] || "Player")
+        });
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify(list)).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
+  }
 }`;
                     navigator.clipboard.writeText(code);
                     setCopiedScript(true);
@@ -1055,11 +1137,24 @@ export default function AdminDashboardPage() {
                   <span>{copiedScript ? "COPIED CODE!" : "COPY APPS SCRIPT"}</span>
                 </button>
               </div>
+
+              {/* Red Critical Warning Alert */}
+              <div className="bg-[#FFF0F3] border-2 border-[#FF0040] p-2.5 rounded-xl text-[11px] font-sans font-black text-[#FF0040] leading-snug">
+                🚨 CRITICAL DEPLOYMENT SETTING (PREVENTS 403 FORBIDDEN):
+                <p className="font-medium text-gray-800 mt-0.5">
+                  In Google Apps Script, click <strong>Deploy &gt; Manage deployments &gt; Edit (pencil icon)</strong>:
+                  <br />
+                  Make sure <strong>&quot;Who has access&quot;</strong> is set to <strong>&quot;Anyone&quot;</strong> (NOT &quot;Only myself&quot;).
+                  <br />
+                  Select <strong>Version: New version</strong>, then click <strong>Deploy</strong>.
+                </p>
+              </div>
+
               <ol className="text-xs font-sans text-gray-800 space-y-1 list-decimal list-inside font-medium leading-relaxed">
-                <li>Open any Google Sheet and create columns: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">Timestamp, Contact, City, Level, Source, Submitter</code>.</li>
+                <li>Open your Google Sheet and set Row 1 headers: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">Timestamp (IST), Contact, City, Level, Category, Source, Submitter</code>.</li>
                 <li>Click <strong>Extensions &gt; Apps Script</strong>, paste the copied snippet, and click <strong>Deploy &gt; New deployment</strong>.</li>
-                <li>Select type <strong>Web app</strong>, set <em>Who has access</em> to <strong>Anyone</strong>, and copy the generated Web App URL.</li>
-                <li>In your hosting (Vercel) dashboard, add environment variable: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">RSVP_WEBHOOK_URL=&lt;your_web_app_url&gt;</code>.</li>
+                <li>Select type <strong>Web app</strong>, set <em>Who has access</em> to <strong>Anyone</strong>, and copy the Web App URL.</li>
+                <li>In your hosting (Vercel) environment variables: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">RSVP_WEBHOOK_URL=&lt;your_web_app_url&gt;</code>.</li>
               </ol>
             </div>
 
