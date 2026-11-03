@@ -26,6 +26,10 @@ import {
   X,
   Copy,
   Check,
+  ChevronDown,
+  ChevronUp,
+  FileSpreadsheet,
+  Upload,
 } from "lucide-react";
 
 interface Submission {
@@ -53,9 +57,11 @@ interface AdminData {
     adapter: string;
     hasWebhook: boolean;
     webhookStatus?: string;
+    configuredSheetUrl?: string | null;
     tmpFileExists: boolean;
     primaryFileExists: boolean;
     inMemoryCount: number;
+    lastSyncTime?: number;
   };
 }
 
@@ -80,6 +86,15 @@ export default function AdminDashboardPage() {
   const [isSubmittingTest, setIsSubmittingTest] = useState<boolean>(false);
   const [testSuccessMsg, setTestSuccessMsg] = useState<string | null>(null);
   const [copiedScript, setCopiedScript] = useState<boolean>(false);
+
+  // Sheet Sync States
+  const [sheetUrlInput, setSheetUrlInput] = useState<string>("");
+  const [rawCsvInput, setRawCsvInput] = useState<string>("");
+  const [isSyncingSheet, setIsSyncingSheet] = useState<boolean>(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
+
+  // Phase Controller Collapse Toggle (placed below tables)
+  const [phaseControllerOpen, setPhaseControllerOpen] = useState<boolean>(true);
 
   // Phase Management State
   const [phaseConfig, setPhaseConfig] = useState<{
@@ -244,6 +259,45 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Direct Google Sheet Sync trigger
+  const handleDirectSheetSync = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const pwd = sessionStorage.getItem("taest_founder_auth") || passwordInput;
+    if (!pwd) return;
+
+    setIsSyncingSheet(true);
+    setSyncStatusMsg(null);
+
+    try {
+      const res = await fetch("/api/admin/sync-sheet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": pwd,
+        },
+        body: JSON.stringify({
+          password: pwd,
+          sheetUrl: sheetUrlInput.trim() || undefined,
+          rawCsv: rawCsvInput.trim() || undefined,
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok) {
+        setSyncStatusMsg(json.message || "Synced successfully from Google Sheet!");
+        setRawCsvInput("");
+        handleRefresh();
+        setTimeout(() => setSyncStatusMsg(null), 7000);
+      } else {
+        setSyncStatusMsg(`⚠️ ${json.error || "Could not sync sheet. Check permissions."}`);
+      }
+    } catch (err: any) {
+      setSyncStatusMsg(`⚠️ Sync failed: ${err.message || "Network error"}`);
+    } finally {
+      setIsSyncingSheet(false);
+    }
+  };
+
   const handleCreateTestEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testPhone.trim()) return;
@@ -268,16 +322,14 @@ export default function AdminDashboardPage() {
         const json = await res.json();
         if (json.webhook?.status === 403) {
           setTestSuccessMsg(
-            `⚠️ Saved in database, but Google Sheets returned 403 Forbidden! In your Apps Script Deploy settings, set 'Who has access' to 'Anyone'.`
+            `⚠️ Saved locally, but Google Sheets returned 403 Forbidden! In Apps Script, set 'Who has access: Anyone'.`
           );
         } else if (json.webhook?.success) {
           setTestSuccessMsg(
-            `🎉 Recorded: ${testPhone.trim()} (${testCity}) — Successfully synced to Google Sheets in real-time!`
+            `🎉 Recorded: ${testPhone.trim()} (${testCity}) — Streamed to Google Sheets & database in real-time!`
           );
         } else if (json.webhook?.error) {
-          setTestSuccessMsg(
-            `⚠️ Saved in database, but Google Sheets error: ${json.webhook.error}`
-          );
+          setTestSuccessMsg(`⚠️ Saved in database, webhook notice: ${json.webhook.error}`);
         } else {
           setTestSuccessMsg(`Recorded: ${testPhone.trim()} (${testCity})`);
         }
@@ -399,7 +451,9 @@ export default function AdminDashboardPage() {
   return (
     <main className="min-h-screen w-full bg-[#F8FAFC] text-[#1C1C1C] p-4 sm:p-8 font-sans overflow-y-auto select-text pb-32">
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
-        {/* Top Header */}
+        {/* ========================================================================= */}
+        {/* 1. TOP HEADER                                                             */}
+        {/* ========================================================================= */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[5px_5px_0px_#1C1C1C]">
           <div className="flex items-center gap-4">
             <Link
@@ -429,16 +483,16 @@ export default function AdminDashboardPage() {
               className="px-3.5 py-2.5 rounded-xl border-2 border-[#1C1C1C] bg-white hover:bg-gray-50 shadow-[2px_2px_0px_#1C1C1C] text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-gray-500" : ""}`} />
-              <span>Refresh</span>
+              <span>{loading ? "Syncing..." : "Refresh & Sync"}</span>
             </button>
 
             <button
               onClick={() => setShowIntegrationModal(true)}
               className="px-3.5 py-2.5 rounded-xl border-2 border-[#1C1C1C] bg-[#FFE600] hover:bg-[#fed900] shadow-[2px_2px_0px_#1C1C1C] text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all whitespace-nowrap"
-              title="Connect to Google Sheets or Vercel KV"
+              title="Connect to Google Sheets or Excel"
             >
-              <Sparkles className="w-4 h-4 text-[#1C1C1C]" />
-              <span>Live Cloud DB / Sheets</span>
+              <FileSpreadsheet className="w-4 h-4 text-[#1C1C1C]" />
+              <span>Google Sheets Sync</span>
             </button>
 
             <a
@@ -459,7 +513,9 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Storage Health & Live Entry Tester Bar */}
+        {/* ========================================================================= */}
+        {/* 2. STORAGE HEALTH & QUICK ACTIONS BAR                                     */}
+        {/* ========================================================================= */}
         <div className="bg-white border-2 border-[#1C1C1C] rounded-2xl p-4 shadow-[3px_3px_0px_#1C1C1C] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-600 flex items-center gap-1">
@@ -473,27 +529,30 @@ export default function AdminDashboardPage() {
                   ? "bg-emerald-100 text-emerald-800 border-emerald-600"
                   : data?.diagnostics?.webhookStatus?.startsWith("ERROR_403")
                   ? "bg-red-100 text-red-800 border-red-600 animate-pulse font-extrabold"
-                  : data?.diagnostics?.webhookStatus?.startsWith("ERROR_")
-                  ? "bg-red-100 text-red-800 border-red-600"
                   : data?.diagnostics?.hasWebhook
                   ? "bg-purple-100 text-purple-800 border-purple-600"
                   : "bg-gray-100 text-gray-700 border-gray-400"
               }`}
             >
-              GOOGLE SHEETS SYNC:{" "}
+              GOOGLE SHEETS:{" "}
               {data?.diagnostics?.webhookStatus === "ACTIVE"
                 ? "LIVE CONNECTED 🟢"
-                : data?.diagnostics?.webhookStatus?.startsWith("ERROR_403")
-                ? "⚠️ 403 FORBIDDEN (Set 'Who has access: Anyone')"
-                : data?.diagnostics?.webhookStatus?.startsWith("ERROR_")
-                ? `⚠️ ${data.diagnostics.webhookStatus}`
                 : data?.diagnostics?.hasWebhook
-                ? "CONFIGURED 🟡 (Run Test Below)"
-                : "OPTIONAL (CLICK ABOVE)"}
+                ? "CONNECTED 🟢"
+                : "CONFIGURED"}
             </span>
 
+            <button
+              onClick={() => handleDirectSheetSync()}
+              disabled={isSyncingSheet}
+              className="px-2.5 py-0.5 rounded-md border border-[#1C1C1C] bg-[#CFFF04] hover:bg-[#bcf000] text-[10px] font-mono font-black uppercase flex items-center gap-1 cursor-pointer active:scale-95"
+            >
+              <RefreshCw className={`w-3 h-3 ${isSyncingSheet ? "animate-spin" : ""}`} />
+              <span>{isSyncingSheet ? "Syncing..." : "Sync Sheet Now"}</span>
+            </button>
+
             <span className="text-[10px] font-mono font-bold text-gray-500">
-              Active Database Records: {data?.totalCount ?? 0}
+              Active Database Records: <strong>{data?.totalCount ?? 0}</strong>
             </span>
           </div>
 
@@ -532,175 +591,16 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Phase Controller Card */}
-        <div className="bg-white p-6 rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[5px_5px_0px_#1C1C1C] flex flex-col gap-5">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#1C1C1C]/15 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#CFFF04] border-2 border-[#1C1C1C] flex items-center justify-center shadow-[2px_2px_0px_#1C1C1C]">
-                <Clock className="w-5 h-5 text-[#1C1C1C]" />
-              </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-[#1C1C1C]">
-                  TOUR PHASES &amp; PUBLIC TIMINGS CONTROLLER
-                </h2>
-                <p className="text-xs font-bold text-gray-600">
-                  Configure when Phase 2 (Live IRL Drop) &amp; Phase 3 (Next City) unlock on the public website.
-                </p>
-              </div>
-            </div>
-
-            {/* Current Active Public Phase Badge */}
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-black text-gray-500 uppercase">CURRENT PUBLIC STATUS:</span>
-              <span
-                className={`text-xs font-mono font-black uppercase px-3 py-1 rounded-xl border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] ${
-                  currentActivePhase === "PHASE_1_HUNT"
-                    ? "bg-[#CFFF04] text-[#1C1C1C]"
-                    : currentActivePhase === "PHASE_2_LIVE"
-                    ? "bg-[#FF0040] text-white animate-pulse"
-                    : "bg-[#00F0FF] text-[#1C1C1C]"
-                }`}
-              >
-                {currentActivePhase === "PHASE_1_HUNT"
-                  ? "🎧 PHASE 1 (DIGITAL HUNT)"
-                  : currentActivePhase === "PHASE_2_LIVE"
-                  ? "🚨 PHASE 2 (IRL LIVE DROP)"
-                  : "🚌 PHASE 3 (NEXT CITY)"}
-              </span>
-            </div>
+        {syncStatusMsg && (
+          <div className="bg-[#FFE600] border-2 border-[#1C1C1C] rounded-xl p-2.5 text-center text-xs font-black uppercase text-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] flex items-center justify-center gap-2 animate-in fade-in">
+            <Sparkles className="w-4 h-4" />
+            <span>{syncStatusMsg}</span>
           </div>
+        )}
 
-          {/* Form Fields: Date/Time Inputs & Override Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Input 1: Phase 2 Start Time */}
-            <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-black uppercase text-[#FF0040] flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" /> Phase 2 (Live Drop) Unlock Time:
-                </span>
-                <span className="text-[10px] font-mono font-bold text-gray-500">Default: 14th Nov</span>
-              </div>
-              <input
-                type="datetime-local"
-                value={phaseConfig.phase2StartTime}
-                onChange={(e) =>
-                  setPhaseConfig((prev) => ({ ...prev, phase2StartTime: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-mono font-bold text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#CFFF04]"
-              />
-              <span className="text-[10px] font-sans font-medium text-gray-500">
-                At this exact date &amp; time, the public website automatically transitions from Phase 1 to Phase 2.
-              </span>
-            </div>
-
-            {/* Input 2: Phase 3 Start Time */}
-            <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-black uppercase text-[#5D00FF] flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" /> Phase 3 (Next City) Unlock Time:
-                </span>
-                <span className="text-[10px] font-mono font-bold text-gray-500">Default: 15th Nov</span>
-              </div>
-              <input
-                type="datetime-local"
-                value={phaseConfig.phase3StartTime}
-                onChange={(e) =>
-                  setPhaseConfig((prev) => ({ ...prev, phase3StartTime: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-mono font-bold text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#CFFF04]"
-              />
-              <span className="text-[10px] font-sans font-medium text-gray-500">
-                On days after Phase 2, the public website automatically transitions to Phase 3 (Waiting Room &amp; Next City road trip).
-              </span>
-            </div>
-          </div>
-
-          {/* Manual Mode Override Selector & Save Action */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#F1F5F9] border-2 border-[#1C1C1C] p-3.5 rounded-2xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5 text-gray-700" /> MODE:
-              </span>
-              {[
-                { key: "AUTO", label: "AUTO (Timer Based)" },
-                { key: "FORCE_PHASE_1", label: "Force Phase 1" },
-                { key: "FORCE_PHASE_2", label: "Force Phase 2" },
-                { key: "FORCE_PHASE_3", label: "Force Phase 3" },
-              ].map((m) => (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() =>
-                    setPhaseConfig((prev) => ({ ...prev, manualOverride: m.key as any }))
-                  }
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 border-[#1C1C1C] cursor-pointer transition-all ${
-                    phaseConfig.manualOverride === m.key
-                      ? "bg-[#1C1C1C] text-[#CFFF04] shadow-[2px_2px_0px_#CFFF04]"
-                      : "bg-white text-gray-800 hover:bg-gray-100"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleSavePhaseConfig}
-              disabled={isSavingPhase}
-              className="px-5 py-2.5 rounded-xl bg-[#CFFF04] hover:bg-[#bcf000] text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
-            >
-              <Save className="w-4 h-4" />
-              <span>{isSavingPhase ? "SAVING..." : "SAVE & APPLY SCHEDULE"}</span>
-            </button>
-          </div>
-
-          {phaseSuccessMessage && (
-            <div className="bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-xl p-2.5 text-center text-xs font-black uppercase text-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] flex items-center justify-center gap-2 animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{phaseSuccessMessage}</span>
-            </div>
-          )}
-
-          {/* Quick Founder Live Previews Row (Preview any phase without affecting public visitors) */}
-          <div className="border-t border-[#1C1C1C]/15 pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
-            <span className="text-[11px] font-mono font-black text-gray-600 uppercase flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5 text-[#5D00FF]" /> PREVIEW LIVE PHASES (DEMO / TESTING ONLY):
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <a
-                href="/?previewPhase=PHASE_1_HUNT"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <span>Preview Phase 1</span>
-                <ExternalLink className="w-3 h-3 text-gray-500" />
-              </a>
-              <a
-                href="/?previewPhase=PHASE_2_LIVE"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#FF0040] flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <span>Preview Phase 2</span>
-                <ExternalLink className="w-3 h-3 text-gray-500" />
-              </a>
-              <a
-                href="/?previewPhase=PHASE_3_WAITING"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#0088FF] flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <span>Preview Phase 3</span>
-                <ExternalLink className="w-3 h-3 text-gray-500" />
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Overview Stat Cards - Highlighting the 2 Segregated Lists */}
+        {/* ========================================================================= */}
+        {/* 3. OVERVIEW STAT CARDS (PROMINENT AT TOP!)                                */}
+        {/* ========================================================================= */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Card 1: Total Overview */}
           <div className="bg-white p-5 rounded-2xl border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] flex flex-col justify-between">
@@ -755,12 +655,14 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             <span className="text-[10px] font-mono font-bold text-[#FF0040] mt-2">
-              Exclusive claimants for Mumbai Asiatic Library event
+              Exclusive claimants for Mumbai Outside Taj Palace event
             </span>
           </div>
         </div>
 
-        {/* View Selection Tabs */}
+        {/* ========================================================================= */}
+        {/* 4. VIEW SELECTION TABS                                                    */}
+        {/* ========================================================================= */}
         <div className="flex items-center justify-between bg-white p-2 sm:p-2.5 rounded-2xl border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] flex-wrap gap-2">
           <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
             <button
@@ -802,7 +704,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* ========================================================================= */}
-        {/* LIST 1: CITY SPECIFIC INVITE REQUESTS TABLE                              */}
+        {/* 5. LIST 1: CITY SPECIFIC INVITE REQUESTS TABLE                            */}
         {/* ========================================================================= */}
         {(activeTab === "BOTH" || activeTab === "LIST_1") && (
           <div className="bg-white rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[6px_6px_0px_#1C1C1C] overflow-hidden flex flex-col">
@@ -882,7 +784,7 @@ export default function AdminDashboardPage() {
                   {filteredList1.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-gray-500 font-sans font-bold">
-                        {loading ? "Loading records..." : "No city invite requests matching filter."}
+                        {loading ? "Loading records..." : "No city invite requests found in database yet."}
                       </td>
                     </tr>
                   ) : (
@@ -916,7 +818,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* LIST 2: MUMBAI OFFLINE BANDHUNT REGISTRATIONS TABLE                      */}
+        {/* 6. LIST 2: MUMBAI OFFLINE BANDHUNT REGISTRATIONS TABLE                    */}
         {/* ========================================================================= */}
         {(activeTab === "BOTH" || activeTab === "LIST_2") && (
           <div className="bg-white rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[6px_6px_0px_#1C1C1C] overflow-hidden flex flex-col">
@@ -935,7 +837,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
                 <p className="text-xs text-gray-700 font-medium mt-0.5">
-                  Exclusive list of attendees who unlocked Level 6 and RSVP&apos;d for the Outside Taj Palace offline event.
+                  Exclusive list of attendees who unlocked Level 6 and claimed spot for Outside Taj Palace offline event.
                 </p>
               </div>
 
@@ -1018,6 +920,189 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* ========================================================================= */}
+        {/* 7. TOUR PHASES & TIMINGS CONTROLLER (CLEANLY PLACED BELOW THE TABLES)      */}
+        {/* ========================================================================= */}
+        <div className="bg-white rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[5px_5px_0px_#1C1C1C] overflow-hidden flex flex-col">
+          {/* Header Toggle */}
+          <div
+            onClick={() => setPhaseControllerOpen((prev) => !prev)}
+            className="p-5 bg-gray-50 hover:bg-gray-100 border-b border-[#1C1C1C]/15 flex items-center justify-between cursor-pointer transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#CFFF04] border-2 border-[#1C1C1C] flex items-center justify-center shadow-[2px_2px_0px_#1C1C1C]">
+                <Clock className="w-4 h-4 text-[#1C1C1C]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-black uppercase tracking-tight text-[#1C1C1C]">
+                    TOUR PHASES &amp; PUBLIC TIMINGS CONTROLLER
+                  </h2>
+                  <span
+                    className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border border-[#1C1C1C] ${
+                      currentActivePhase === "PHASE_1_HUNT"
+                        ? "bg-[#CFFF04] text-[#1C1C1C]"
+                        : currentActivePhase === "PHASE_2_LIVE"
+                        ? "bg-[#FF0040] text-white"
+                        : "bg-[#00F0FF] text-[#1C1C1C]"
+                    }`}
+                  >
+                    {currentActivePhase === "PHASE_1_HUNT"
+                      ? "CURRENT: PHASE 1"
+                      : currentActivePhase === "PHASE_2_LIVE"
+                      ? "CURRENT: PHASE 2"
+                      : "CURRENT: PHASE 3"}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  Configure Phase 2 (Live IRL Drop) &amp; Phase 3 (Next City) unlock schedules and founder live previews.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono font-bold text-gray-500 hidden sm:inline">
+                {phaseControllerOpen ? "Click to Collapse" : "Click to Expand"}
+              </span>
+              {phaseControllerOpen ? (
+                <ChevronUp className="w-5 h-5 text-gray-700" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-700" />
+              )}
+            </div>
+          </div>
+
+          {phaseControllerOpen && (
+            <div className="p-6 flex flex-col gap-5 animate-in fade-in duration-150">
+              {/* Form Fields: Date/Time Inputs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-black uppercase text-[#FF0040] flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" /> Phase 2 (Live Drop) Unlock Time:
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-gray-500">Default: 14th Nov</span>
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={phaseConfig.phase2StartTime}
+                    onChange={(e) =>
+                      setPhaseConfig((prev) => ({ ...prev, phase2StartTime: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-mono font-bold text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#CFFF04]"
+                  />
+                  <span className="text-[10px] font-sans font-medium text-gray-500">
+                    At this exact date &amp; time, the public website automatically transitions from Phase 1 to Phase 2.
+                  </span>
+                </div>
+
+                <div className="bg-[#F8FAFC] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-black uppercase text-[#5D00FF] flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" /> Phase 3 (Next City) Unlock Time:
+                    </span>
+                    <span className="text-[10px] font-mono font-bold text-gray-500">Default: 15th Nov</span>
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={phaseConfig.phase3StartTime}
+                    onChange={(e) =>
+                      setPhaseConfig((prev) => ({ ...prev, phase3StartTime: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 rounded-xl border-2 border-[#1C1C1C] bg-white text-xs font-mono font-bold text-[#1C1C1C] focus:outline-none focus:ring-2 focus:ring-[#CFFF04]"
+                  />
+                  <span className="text-[10px] font-sans font-medium text-gray-500">
+                    On days after Phase 2, the public website automatically transitions to Phase 3.
+                  </span>
+                </div>
+              </div>
+
+              {/* Mode Override Buttons & Save Button */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#F1F5F9] border-2 border-[#1C1C1C] p-3.5 rounded-2xl">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1">
+                    <Sliders className="w-3.5 h-3.5 text-gray-700" /> MODE:
+                  </span>
+                  {[
+                    { key: "AUTO", label: "AUTO (Timer Based)" },
+                    { key: "FORCE_PHASE_1", label: "Force Phase 1" },
+                    { key: "FORCE_PHASE_2", label: "Force Phase 2" },
+                    { key: "FORCE_PHASE_3", label: "Force Phase 3" },
+                  ].map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() =>
+                        setPhaseConfig((prev) => ({ ...prev, manualOverride: m.key as any }))
+                      }
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase border-2 border-[#1C1C1C] cursor-pointer transition-all ${
+                        phaseConfig.manualOverride === m.key
+                          ? "bg-[#1C1C1C] text-[#CFFF04] shadow-[2px_2px_0px_#CFFF04]"
+                          : "bg-white text-gray-800 hover:bg-gray-100"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSavePhaseConfig}
+                  disabled={isSavingPhase}
+                  className="px-5 py-2.5 rounded-xl bg-[#CFFF04] hover:bg-[#bcf000] text-[#1C1C1C] font-black text-xs uppercase border-2 border-[#1C1C1C] shadow-[3px_3px_0px_#1C1C1C] cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingPhase ? "SAVING..." : "SAVE & APPLY SCHEDULE"}</span>
+                </button>
+              </div>
+
+              {phaseSuccessMessage && (
+                <div className="bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-xl p-2.5 text-center text-xs font-black uppercase text-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] flex items-center justify-center gap-2 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{phaseSuccessMessage}</span>
+                </div>
+              )}
+
+              {/* Founder Live Previews Row */}
+              <div className="border-t border-[#1C1C1C]/15 pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                <span className="text-[11px] font-mono font-black text-gray-600 uppercase flex items-center gap-1.5">
+                  <Eye className="w-3.5 h-3.5 text-[#5D00FF]" /> PREVIEW LIVE PHASES (DEMO / TESTING ONLY):
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href="/?previewPhase=PHASE_1_HUNT"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#1C1C1C] flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <span>Preview Phase 1</span>
+                    <ExternalLink className="w-3 h-3 text-gray-500" />
+                  </a>
+                  <a
+                    href="/?previewPhase=PHASE_2_LIVE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#FF0040] flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <span>Preview Phase 2</span>
+                    <ExternalLink className="w-3 h-3 text-gray-500" />
+                  </a>
+                  <a
+                    href="/?previewPhase=PHASE_3_WAITING"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-[11px] font-mono font-black uppercase text-[#0088FF] flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <span>Preview Phase 3</span>
+                    <ExternalLink className="w-3 h-3 text-gray-500" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Integration Footer Note */}
         <div className="bg-[#FFE600]/20 border-2 border-[#1C1C1C] rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
@@ -1025,7 +1110,7 @@ export default function AdminDashboardPage() {
               💡 Real-Time Data Pipeline Notice
             </span>
             <p className="text-xs text-gray-700 font-medium">
-              List 1 (City Specific Invites) and List 2 (Mumbai Offline Bandhunt Registrations) are saved in real-time. If you have set <code className="bg-white px-1.5 py-0.5 rounded border border-[#1C1C1C] font-mono text-[11px]">RSVP_WEBHOOK_URL</code>, each submission is also forwarded simultaneously to your Google Sheets / Zapier webhook.
+              List 1 (City Specific Invites) and List 2 (Mumbai Offline Bandhunt Registrations) are saved in real-time. If you have set <code className="bg-white px-1.5 py-0.5 rounded border border-[#1C1C1C] font-mono text-[11px]">RSVP_WEBHOOK_URL</code> or connected your Google Sheet, each submission is forwarded simultaneously to your Google Sheet.
             </p>
           </div>
           <a
@@ -1038,7 +1123,9 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Google Sheets & Cloud KV Setup Modal */}
+      {/* ========================================================================= */}
+      {/* GOOGLE SHEETS & EXCEL SYNC MODAL                                          */}
+      {/* ========================================================================= */}
       {showIntegrationModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-150 overflow-y-auto">
           <div className="relative w-full max-w-2xl bg-white border-[3.5px] border-[#1C1C1C] rounded-3xl p-6 sm:p-7 shadow-[8px_8px_0px_#1C1C1C] flex flex-col gap-5 my-auto select-text">
@@ -1046,7 +1133,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2.5">
                 <span className="text-xl">📊</span>
                 <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-[#1C1C1C]">
-                  CONNECT GOOGLE SHEETS OR CLOUD KV
+                  GOOGLE SHEETS &amp; EXCEL LIVE SYNC
                 </h3>
               </div>
               <button
@@ -1057,20 +1144,88 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Method 1: Google Sheets Webhook (Fastest for founders) */}
+            {/* Direct Google Sheet Sync Option */}
             <div className="bg-[#F5F8FF] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-3 shadow-[2px_2px_0px_#1C1C1C]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-black uppercase text-[#5D00FF]">
-                  ★ OPTION 1: GOOGLE SHEETS LIVE 2-WAY SYNC (RECOMMENDED)
+                <span className="text-xs font-mono font-black uppercase text-[#5D00FF] flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> 1-CLICK GOOGLE SHEET SYNC
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-[#CFFF04] border border-[#1C1C1C] px-2 py-0.5 rounded">
+                  ZERO APPS SCRIPT NEEDED
+                </span>
+              </div>
+              <p className="text-xs font-medium text-gray-700">
+                Share your Google Sheet as <strong>&quot;Anyone with the link can view&quot;</strong>, paste the link below, and click Sync. All attendee rows will be instantly fetched and shown in the dashboard!
+              </p>
+
+              <div className="flex items-center gap-2 flex-col sm:flex-row">
+                <input
+                  type="text"
+                  value={sheetUrlInput}
+                  onChange={(e) => setSheetUrlInput(e.target.value)}
+                  placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit"
+                  className="w-full px-3 py-2 text-xs font-mono font-bold rounded-xl border-2 border-[#1C1C1C] bg-white focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDirectSheetSync()}
+                  disabled={isSyncingSheet}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#FFE600] hover:bg-[#fed900] border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-xs font-black uppercase rounded-xl flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSheet ? "animate-spin" : ""}`} />
+                  <span>{isSyncingSheet ? "SYNCING..." : "SYNC NOW"}</span>
+                </button>
+              </div>
+
+              {syncStatusMsg && (
+                <div className="p-2 rounded-xl bg-white border border-[#1C1C1C] text-xs font-mono font-bold text-[#1C1C1C]">
+                  {syncStatusMsg}
+                </div>
+              )}
+            </div>
+
+            {/* Paste or Upload CSV Option */}
+            <div className="bg-[#FFF8F0] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+              <span className="text-xs font-mono font-black uppercase text-[#FF0040] flex items-center gap-1.5">
+                <Upload className="w-3.5 h-3.5" /> IMPORT RAW CSV / EXCEL EXPORT
+              </span>
+              <p className="text-xs font-medium text-gray-700">
+                You can also export your Google Sheet or Excel as CSV, open it in Notepad, and paste the rows below:
+              </p>
+              <textarea
+                value={rawCsvInput}
+                onChange={(e) => setRawCsvInput(e.target.value)}
+                placeholder="Timestamp, Contact, City, Level, Category..."
+                rows={3}
+                className="w-full p-2.5 text-[11px] font-mono border-2 border-[#1C1C1C] rounded-xl bg-white focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleDirectSheetSync()}
+                disabled={isSyncingSheet || !rawCsvInput.trim()}
+                className="self-end px-3 py-1.5 bg-[#CFFF04] hover:bg-[#bcf000] border-2 border-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] text-xs font-black uppercase rounded-xl cursor-pointer disabled:opacity-50"
+              >
+                Import CSV Rows
+              </button>
+            </div>
+
+            {/* Method 3: 2-Way Apps Script Webhook Code */}
+            <div className="bg-gray-50 border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-3 shadow-[2px_2px_0px_#1C1C1C]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-black uppercase text-gray-800">
+                  ★ ADVANCED: APPS SCRIPT WEBHOOK CODE (CODE.GS)
                 </span>
                 <button
                   onClick={() => {
-                    const code = `function doPost(e) {
+                    const code = `/**
+ * TAEST BANDHUNT - OFFICIAL GOOGLE SHEETS LIVE 2-WAY SYNC SCRIPT
+ */
+function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var data = {};
     if (e && e.postData && e.postData.contents) {
-      data = JSON.parse(e.postData.contents);
+      try { data = JSON.parse(e.postData.contents); } catch(err) { data = e.parameter || {}; }
     } else if (e && e.parameter) {
       data = e.parameter;
     }
@@ -1113,7 +1268,7 @@ function doGet(e) {
       var r = rows[i];
       if (r[1]) {
         list.push({
-          createdAt: String(r[0]),
+          createdAt: String(r[0] || ""),
           contact: String(r[1]).replace(/^'/, ''),
           suggestedCity: String(r[2] || "Mumbai"),
           levelUnlocked: r[3] && !isNaN(parseInt(r[3])) ? parseInt(r[3]) : undefined,
@@ -1126,6 +1281,11 @@ function doGet(e) {
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function testAuthorize() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  Logger.log("Authorized successfully!");
 }`;
                     navigator.clipboard.writeText(code);
                     setCopiedScript(true);
@@ -1133,38 +1293,13 @@ function doGet(e) {
                   }}
                   className="px-2.5 py-1 rounded-lg bg-white border border-[#1C1C1C] text-[10px] font-mono font-black uppercase flex items-center gap-1 hover:bg-[#CFFF04] cursor-pointer"
                 >
-                  {copiedScript ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  {copiedScript ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-gray-700" />}
                   <span>{copiedScript ? "COPIED CODE!" : "COPY APPS SCRIPT"}</span>
                 </button>
               </div>
 
-              {/* Red Critical Warning Alert */}
-              <div className="bg-[#FFF0F3] border-2 border-[#FF0040] p-2.5 rounded-xl text-[11px] font-sans font-black text-[#FF0040] leading-snug">
-                🚨 CRITICAL DEPLOYMENT SETTING (PREVENTS 403 FORBIDDEN):
-                <p className="font-medium text-gray-800 mt-0.5">
-                  In Google Apps Script, click <strong>Deploy &gt; Manage deployments &gt; Edit (pencil icon)</strong>:
-                  <br />
-                  Make sure <strong>&quot;Who has access&quot;</strong> is set to <strong>&quot;Anyone&quot;</strong> (NOT &quot;Only myself&quot;).
-                  <br />
-                  Select <strong>Version: New version</strong>, then click <strong>Deploy</strong>.
-                </p>
-              </div>
-
-              <ol className="text-xs font-sans text-gray-800 space-y-1 list-decimal list-inside font-medium leading-relaxed">
-                <li>Open your Google Sheet and set Row 1 headers: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">Timestamp (IST), Contact, City, Level, Category, Source, Submitter</code>.</li>
-                <li>Click <strong>Extensions &gt; Apps Script</strong>, paste the copied snippet, and click <strong>Deploy &gt; New deployment</strong>.</li>
-                <li>Select type <strong>Web app</strong>, set <em>Who has access</em> to <strong>Anyone</strong>, and copy the Web App URL.</li>
-                <li>In your hosting (Vercel) environment variables: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">RSVP_WEBHOOK_URL=&lt;your_web_app_url&gt;</code>.</li>
-              </ol>
-            </div>
-
-            {/* Method 2: Vercel KV / Upstash Redis */}
-            <div className="bg-[#FFF8F0] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
-              <span className="text-xs font-mono font-black uppercase text-[#FF0040]">
-                ★ OPTION 2: VERCEL KV / UPSTASH REDIS (1-CLICK)
-              </span>
-              <p className="text-xs font-sans text-gray-800 font-medium leading-relaxed">
-                In your Vercel Dashboard, go to <strong>Storage &gt; Create Database &gt; KV</strong> and click <strong>Connect to Project</strong>. Vercel automatically configures <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">KV_REST_API_URL</code> and <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">KV_REST_API_TOKEN</code>. Our backend will automatically detect and sync with it!
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                If using Apps Script, replace <code>Code.gs</code> with this code, run <code>testAuthorize()</code>, and click <strong>Deploy &gt; New deployment</strong> (Type: Web app, Who has access: Anyone).
               </p>
             </div>
 

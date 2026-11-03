@@ -1,12 +1,16 @@
 /**
- * TAEST BANDHUNT - OFFICIAL GOOGLE SHEETS LIVE SYNC SCRIPT
+ * TAEST BANDHUNT - OFFICIAL GOOGLE SHEETS LIVE 2-WAY SYNC SCRIPT
  * 
  * ============================================================================
- * CRITICAL STEP TO PREVENT 403 FORBIDDEN ERROR:
- * When you deploy:
- * - "Execute as": "Me (your-email@gmail.com)"
- * - "Who has access": "Anyone"  <-- MUST BE "Anyone"! 
- * (If it is "Only myself", Google blocks external requests with a 403 Forbidden error).
+ * HOW TO DEPLOY:
+ * 1. Open your Google Sheet.
+ * 2. Click Extensions > Apps Script.
+ * 3. Replace all code in Code.gs with this entire file.
+ * 4. Run `testAuthorize()` once to grant permissions (Review Permissions > Advanced > Allow).
+ * 5. Click Deploy > New deployment (Select type: Web app).
+ *    - Execute as: "Me"
+ *    - Who has access: "Anyone" (CRITICAL: must be Anyone!)
+ * 6. Copy the Web App URL and set it as RSVP_WEBHOOK_URL.
  * ============================================================================
  * 
  * Recommended Sheet Columns (Row 1):
@@ -19,7 +23,11 @@ function doPost(e) {
     var data = {};
     
     if (e && e.postData && e.postData.contents) {
-      data = JSON.parse(e.postData.contents);
+      try {
+        data = JSON.parse(e.postData.contents);
+      } catch (jsonErr) {
+        data = e.parameter || {};
+      }
     } else if (e && e.parameter) {
       data = e.parameter;
     }
@@ -32,7 +40,7 @@ function doPost(e) {
     var source = String(data.source || "web");
     var submitter = String(data.submittedBy || "Player");
 
-    // Prepend single quote to phone numbers so Google Sheets doesn't strip leading zeros or format as scientific notation
+    // Prepend single quote to phone numbers so Google Sheets preserves leading zeros and +
     var cleanContact = contact.startsWith("+") || contact.startsWith("0") ? "'" + contact : contact;
 
     sheet.appendRow([
@@ -61,7 +69,7 @@ function doPost(e) {
 }
 
 /**
- * Enables /admin dashboard to pull registered attendee records directly from Google Sheets
+ * Returns all sheet rows as JSON so the /admin dashboard can pull directly from the Google Sheet
  */
 function doGet(e) {
   try {
@@ -79,7 +87,7 @@ function doGet(e) {
       var r = rows[i];
       if (r[1]) { // If contact column is present
         list.push({
-          createdAt: String(r[0]),
+          createdAt: String(r[0] || ""),
           contact: String(r[1]).replace(/^'/, ''),
           suggestedCity: String(r[2] || "Mumbai"),
           levelUnlocked: r[3] && !isNaN(parseInt(r[3])) ? parseInt(r[3]) : undefined,
@@ -94,7 +102,15 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService
-      .createTextOutput(JSON.stringify({ status: "ok", message: "Bandhunt Google Sheets Sync Active" }))
+      .createTextOutput(JSON.stringify([]))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+/**
+ * Quick one-click function to grant OAuth permissions in the Apps Script editor
+ */
+function testAuthorize() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  Logger.log("Authorized successfully! Active sheet: " + sheet.getName());
 }

@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   const format = searchParams.get("format");
   const listType = searchParams.get("list"); // 'city_invites' | 'mumbai_registrations' | null
   const pwd = searchParams.get("pwd") || request.headers.get("x-admin-password") || "";
-  const submissions = await getSubmissions();
+  const submissions = await getSubmissions(true);
 
   // Helper to test if submission belongs to List 2 (Mumbai Offline Bandhunt Early Access Registrations)
   const isMumbaiOffline = (s: PitchSubmission) =>
