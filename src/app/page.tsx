@@ -116,7 +116,10 @@ export default function HitmapApp() {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
       const p = sp.get("previewPhase") || sp.get("phase");
-      if (p) setPreviewPhaseParam(p);
+      if (p) {
+        setPreviewPhaseParam(p);
+        setAudioUnlocked(true); // Directly unlock audio / bypass landing screen in preview mode!
+      }
     }
   }, []);
 
@@ -458,7 +461,7 @@ export default function HitmapApp() {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-white select-none">
+    <main className="fixed inset-0 w-screen h-screen overflow-hidden bg-white select-none touch-none">
       {/* 1. CRT Grain Overlay */}
       <NoiseOverlay />
 
@@ -475,8 +478,8 @@ export default function HitmapApp() {
         </div>
       )}
 
-      {/* 2. Page 1 Landing Screen Modal (No background emojis, headphones unlock CTA) */}
-      {!audioUnlocked && (
+      {/* 2. Page 1 Landing Screen Modal (Bypassed in founder preview mode) */}
+      {!audioUnlocked && !previewPhaseParam && (
         <LandingModal onStart={handleLandingStart} />
       )}
 
@@ -698,43 +701,6 @@ export default function HitmapApp() {
           <span>Join WA</span>
         </a>
       </div>
-
-      {/* 8. Demo Phase Switcher on the RIGHT (Y2K Comic Aesthetic) */}
-      <aside className="fixed bottom-3 right-3 sm:right-4 z-40 flex items-center gap-1.5 bg-white border-2 border-[#1C1C1C] px-3 py-1.5 rounded-xl shadow-[3px_3px_0px_#1C1C1C] text-[10px] font-sans font-black pointer-events-auto">
-        <span className="text-gray-500 uppercase tracking-wider mr-1">
-          DEMO PHASES:
-        </span>
-        <button
-          onClick={() => fetchSchedule("PHASE_1_HUNT")}
-          className={`px-2.5 py-1 rounded-lg cursor-pointer border border-[#1C1C1C] transition-all ${
-            activePhase === "PHASE_1_HUNT"
-              ? "bg-[#CFFF04] text-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C]"
-              : "bg-white text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          PH1 (HUNT)
-        </button>
-        <button
-          onClick={() => fetchSchedule("PHASE_2_LIVE")}
-          className={`px-2.5 py-1 rounded-lg cursor-pointer border border-[#1C1C1C] transition-all ${
-            activePhase === "PHASE_2_LIVE"
-              ? "bg-[#FF2E9A] text-white shadow-[2px_2px_0px_#1C1C1C]"
-              : "bg-white text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          PH2 (STREET)
-        </button>
-        <button
-          onClick={() => fetchSchedule("PHASE_3_WAITING")}
-          className={`px-2.5 py-1 rounded-lg cursor-pointer border border-[#1C1C1C] transition-all ${
-            activePhase === "PHASE_3_WAITING"
-              ? "bg-[#5D00FF] text-white shadow-[2px_2px_0px_#1C1C1C]"
-              : "bg-white text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          PH3 (ROAD TRIP)
-        </button>
-      </aside>
     </main>
   );
 }

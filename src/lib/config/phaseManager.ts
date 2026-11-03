@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import os from "os";
 import { TourPhase } from "@/types/hitmap";
 
 export type ManualOverrideMode = "AUTO" | "FORCE_PHASE_1" | "FORCE_PHASE_2" | "FORCE_PHASE_3";
@@ -16,33 +17,89 @@ const DEFAULT_CONFIG: PhaseConfig = {
   manualOverride: "AUTO",
 };
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), "src", "data", "phase_config.json");
+declare global {
+  var __bandhunt_phase_config: PhaseConfig | undefined;
+}
 
-// In-memory cache to ensure speed across serverless invocations
-let cachedConfig: PhaseConfig | null = null;
+const PRIMARY_CONFIG_PATH = path.join(process.cwd(), "src", "data", "phase_config.json");
+const TMP_CONFIG_PATH = path.join(os.tmpdir(), "bandhunt_phase_config.json");
+
+function getKvConfig() {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (url && token) {
+    return { url, token };
+  }
+  return null;
+}
 
 export function getPhaseConfig(): PhaseConfig {
-  if (cachedConfig) {
-    return cachedConfig;
+  if (globalThis.__bandhunt_phase_config) {
+    return globalThis.__bandhunt_phase_config;
   }
 
+  // 1. Try /tmp
   try {
-    if (fs.existsSync(CONFIG_FILE_PATH)) {
-      const raw = fs.readFileSync(CONFIG_FILE_PATH, "utf-8");
+    if (fs.existsSync(TMP_CONFIG_PATH)) {
+      const raw = fs.readFileSync(TMP_CONFIG_PATH, "utf-8");
       const parsed = JSON.parse(raw);
-      cachedConfig = {
+      globalThis.__bandhunt_phase_config = {
         phase2StartTime: parsed.phase2StartTime || DEFAULT_CONFIG.phase2StartTime,
         phase3StartTime: parsed.phase3StartTime || DEFAULT_CONFIG.phase3StartTime,
         manualOverride: parsed.manualOverride || DEFAULT_CONFIG.manualOverride,
       };
-      return cachedConfig;
+      return globalThis.__bandhunt_phase_config;
+    }
+  } catch (err) {
+    console.warn("Could not read /tmp phase_config.json:", err);
+  }
+
+  // 2. Try primary project directory
+  try {
+    if (fs.existsSync(PRIMARY_CONFIG_PATH)) {
+      const raw = fs.readFileSync(PRIMARY_CONFIG_PATH, "utf-8");
+      const parsed = JSON.parse(raw);
+      globalThis.__bandhunt_phase_config = {
+        phase2StartTime: parsed.phase2StartTime || DEFAULT_CONFIG.phase2StartTime,
+        phase3StartTime: parsed.phase3StartTime || DEFAULT_CONFIG.phase3StartTime,
+        manualOverride: parsed.manualOverride || DEFAULT_CONFIG.manualOverride,
+      };
+      return globalThis.__bandhunt_phase_config;
     }
   } catch (err) {
     console.warn("Could not read phase_config.json, using defaults:", err);
   }
 
-  cachedConfig = { ...DEFAULT_CONFIG };
-  return cachedConfig;
+  globalThis.__bandhunt_phase_config = { ...DEFAULT_CONFIG };
+  return globalThis.__bandhunt_phase_config;
+}
+
+export async function getPhaseConfigAsync(): Promise<PhaseConfig> {
+  const kv = getKvConfig();
+  if (kv) {
+    try {
+      const res = await fetch(`${kv.url}/get/bandhunt_phase_config`, {
+        headers: { Authorization: `Bearer ${kv.token}` },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.result) {
+          const parsed = typeof json.result === "string" ? JSON.parse(json.result) : json.result;
+          globalThis.__bandhunt_phase_config = {
+            phase2StartTime: parsed.phase2StartTime || DEFAULT_CONFIG.phase2StartTime,
+            phase3StartTime: parsed.phase3StartTime || DEFAULT_CONFIG.phase3StartTime,
+            manualOverride: parsed.manualOverride || DEFAULT_CONFIG.manualOverride,
+          };
+          return globalThis.__bandhunt_phase_config;
+        }
+      }
+    } catch (e) {
+      console.warn("KV get phase error:", e);
+    }
+  }
+
+  return getPhaseConfig();
 }
 
 export function savePhaseConfig(updated: Partial<PhaseConfig>): PhaseConfig {
@@ -53,15 +110,37 @@ export function savePhaseConfig(updated: Partial<PhaseConfig>): PhaseConfig {
     manualOverride: updated.manualOverride || current.manualOverride,
   };
 
+  globalThis.__bandhunt_phase_config = nextConfig;
+
+  // 1. Write to /tmp (always succeeds on Serverless)
   try {
-    const dir = path.dirname(CONFIG_FILE_PATH);
+    fs.writeFileSync(TMP_CONFIG_PATH, JSON.stringify(nextConfig, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("Failed to write /tmp phase_config.json:", err);
+  }
+
+  // 2. Try primary (succeeds in local development)
+  try {
+    const dir = path.dirname(PRIMARY_CONFIG_PATH);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(nextConfig, null, 2), "utf-8");
-    cachedConfig = nextConfig;
+    fs.writeFileSync(PRIMARY_CONFIG_PATH, JSON.stringify(nextConfig, null, 2), "utf-8");
   } catch (err) {
-    console.error("Failed to write phase_config.json:", err);
+    // Expected on Vercel (read-only)
+  }
+
+  // 3. Write to KV if available
+  const kv = getKvConfig();
+  if (kv) {
+    fetch(`${kv.url}/set/bandhunt_phase_config`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${kv.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(nextConfig),
+    }).catch((e) => console.warn("KV set phase error:", e));
   }
 
   return nextConfig;

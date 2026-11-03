@@ -1,23 +1,8 @@
 import { NextResponse } from "next/server";
 import { PitchSubmission } from "@/types/hitmap";
-import fs from "fs";
-import path from "path";
+import { getSubmissions, getStorageDiagnostics } from "@/lib/storage/submissionsStore";
 
-const DATA_FILE_PATH = path.join(process.cwd(), "src", "data", "fan_submissions.json");
-
-function readSubmissions(): PitchSubmission[] {
-  try {
-    if (fs.existsSync(DATA_FILE_PATH)) {
-      const data = fs.readFileSync(DATA_FILE_PATH, "utf-8");
-      return JSON.parse(data);
-    }
-  } catch (err) {
-    console.warn("Could not read submissions:", err);
-  }
-  return [];
-}
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "taest2026";
 
 function checkAuth(request: Request): boolean {
   const { searchParams } = new URL(request.url);
@@ -47,13 +32,14 @@ export async function GET(request: Request) {
   const format = searchParams.get("format");
   const listType = searchParams.get("list"); // 'city_invites' | 'mumbai_registrations' | null
   const pwd = searchParams.get("pwd") || request.headers.get("x-admin-password") || "";
-  const submissions = readSubmissions();
+  const submissions = await getSubmissions();
 
   // Helper to test if submission belongs to List 2 (Mumbai Offline Bandhunt Early Access Registrations)
   const isMumbaiOffline = (s: PitchSubmission) =>
     s.source === "mumbai_offline_registration" ||
     s.source === "offline_bandhunt_modal" ||
-    s.submittedBy === "Mumbai Offline Bandhunt Early Access";
+    s.submittedBy === "Mumbai Offline Bandhunt Early Access" ||
+    s.submittedBy === "Mumbai Offline RSVP (offlyn.life)";
 
   const mumbaiOfflineRegistrations = submissions.filter(isMumbaiOffline);
   const cityInviteRequests = submissions.filter((s) => !isMumbaiOffline(s));
@@ -123,6 +109,7 @@ export async function GET(request: Request) {
       cityInviteRequests,
       mumbaiOfflineRegistrations,
       submissions,
+      diagnostics: getStorageDiagnostics(),
       downloadList1CsvUrl: `/api/admin/rsvps?format=csv&list=city_invites&pwd=${encodeURIComponent(pwd)}`,
       downloadList2CsvUrl: `/api/admin/rsvps?format=csv&list=mumbai_registrations&pwd=${encodeURIComponent(pwd)}`,
       downloadAllCsvUrl: `/api/admin/rsvps?format=csv&pwd=${encodeURIComponent(pwd)}`,

@@ -25,13 +25,34 @@ body {
   color: #1C1C1C;
   background: var(--blueprint-blue);
   font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
-  overflow: hidden;
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
   margin: 0;
   padding: 0;
-  touch-action: none;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Custom Y2K Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-left: 2px solid #1C1C1C;
+}
+::-webkit-scrollbar-thumb {
+  background: #CFFF04;
+  border: 2px solid #1C1C1C;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF2E9A;
+}
+
+.select-text, .select-text * {
+  -webkit-user-select: text !important;
+  user-select: text !important;
 }
 
 /* Blueprint Denim / Paper Grid Texture */

@@ -40,6 +40,7 @@ export const PhysicalDropRSVPModal: React.FC<PhysicalDropRSVPModalProps> = ({ on
       fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           contact: playerPhone || "Registered Player",
           suggestedCity: "Mumbai",

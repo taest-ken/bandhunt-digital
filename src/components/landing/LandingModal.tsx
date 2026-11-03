@@ -44,6 +44,7 @@ export const LandingModal: React.FC<LandingModalProps> = ({ onStart }) => {
       fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           contact: trimmed,
           suggestedCity: "Mumbai",

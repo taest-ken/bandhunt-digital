@@ -226,6 +226,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({
           suggestedCity: selectedCity,
           contact: pitchText.trim(),

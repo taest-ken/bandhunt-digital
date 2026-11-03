@@ -23,6 +23,9 @@ import {
   ExternalLink,
   Eye,
   Save,
+  X,
+  Copy,
+  Check,
 } from "lucide-react";
 
 interface Submission {
@@ -46,6 +49,13 @@ interface AdminData {
   downloadList1CsvUrl: string;
   downloadList2CsvUrl: string;
   downloadAllCsvUrl: string;
+  diagnostics?: {
+    adapter: string;
+    hasWebhook: boolean;
+    tmpFileExists: boolean;
+    primaryFileExists: boolean;
+    inMemoryCount: number;
+  };
 }
 
 export default function AdminDashboardPage() {
@@ -61,6 +71,14 @@ export default function AdminDashboardPage() {
 
   // Filter for List 2
   const [list2Search, setList2Search] = useState<string>("");
+
+  // Live Database Test & Integration Modal States
+  const [showIntegrationModal, setShowIntegrationModal] = useState<boolean>(false);
+  const [testPhone, setTestPhone] = useState<string>("");
+  const [testCity, setTestCity] = useState<string>("Mumbai");
+  const [isSubmittingTest, setIsSubmittingTest] = useState<boolean>(false);
+  const [testSuccessMsg, setTestSuccessMsg] = useState<string | null>(null);
+  const [copiedScript, setCopiedScript] = useState<boolean>(false);
 
   // Phase Management State
   const [phaseConfig, setPhaseConfig] = useState<{
@@ -225,6 +243,42 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleCreateTestEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testPhone.trim()) return;
+
+    setIsSubmittingTest(true);
+    setTestSuccessMsg(null);
+
+    try {
+      const res = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contact: testPhone.trim(),
+          suggestedCity: testCity,
+          source: "admin_test_entry",
+          submittedBy: "Founder Live Test",
+          levelUnlocked: 1,
+        }),
+      });
+
+      if (res.ok) {
+        setTestSuccessMsg(`Recorded: ${testPhone.trim()} (${testCity})`);
+        setTestPhone("");
+        handleRefresh();
+        setTimeout(() => setTestSuccessMsg(null), 4000);
+      } else {
+        alert("Failed to create test entry");
+      }
+    } catch (err) {
+      console.error("Test entry error:", err);
+      alert("Error submitting test entry");
+    } finally {
+      setIsSubmittingTest(false);
+    }
+  };
+
   // Filtered List 1: City Specific Invite Requests
   const filteredList1 = useMemo(() => {
     const list = data?.cityInviteRequests || [];
@@ -327,7 +381,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] text-[#1C1C1C] p-4 sm:p-8 font-sans">
+    <main className="min-h-screen w-full bg-[#F8FAFC] text-[#1C1C1C] p-4 sm:p-8 font-sans overflow-y-auto select-text pb-32">
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[5px_5px_0px_#1C1C1C]">
@@ -362,6 +416,15 @@ export default function AdminDashboardPage() {
               <span>Refresh</span>
             </button>
 
+            <button
+              onClick={() => setShowIntegrationModal(true)}
+              className="px-3.5 py-2.5 rounded-xl border-2 border-[#1C1C1C] bg-[#FFE600] hover:bg-[#fed900] shadow-[2px_2px_0px_#1C1C1C] text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all whitespace-nowrap"
+              title="Connect to Google Sheets or Vercel KV"
+            >
+              <Sparkles className="w-4 h-4 text-[#1C1C1C]" />
+              <span>Live Cloud DB / Sheets</span>
+            </button>
+
             <a
               href={data?.downloadAllCsvUrl || "/api/admin/rsvps?format=csv"}
               className="px-3.5 py-2.5 rounded-xl border-2 border-[#1C1C1C] bg-white hover:bg-gray-100 shadow-[2px_2px_0px_#1C1C1C] text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all whitespace-nowrap"
@@ -379,6 +442,62 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Storage Health & Live Entry Tester Bar */}
+        <div className="bg-white border-2 border-[#1C1C1C] rounded-2xl p-4 shadow-[3px_3px_0px_#1C1C1C] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-600 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              STORAGE ENGINE: {data?.diagnostics?.adapter || "SERVERLESS RESILIENT"}
+            </span>
+
+            <span className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border ${
+              data?.diagnostics?.hasWebhook
+                ? "bg-purple-100 text-purple-800 border-purple-600"
+                : "bg-gray-100 text-gray-700 border-gray-400"
+            }`}>
+              GOOGLE SHEETS SYNC: {data?.diagnostics?.hasWebhook ? "LIVE CONNECTED 🟢" : "OPTIONAL (CLICK ABOVE)"}
+            </span>
+
+            <span className="text-[10px] font-mono font-bold text-gray-500">
+              Active Database Records: {data?.totalCount ?? 0}
+            </span>
+          </div>
+
+          {/* Quick Live Test Entry Input */}
+          <form onSubmit={handleCreateTestEntry} className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <input
+              type="text"
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="Test phone (e.g. 9876543210)..."
+              className="px-3 py-1.5 text-xs font-mono font-bold rounded-xl border-2 border-[#1C1C1C] bg-gray-50 focus:bg-white focus:outline-none w-48 sm:w-56"
+            />
+            <select
+              value={testCity}
+              onChange={(e) => setTestCity(e.target.value)}
+              className="px-2 py-1.5 text-xs font-mono font-bold rounded-xl border-2 border-[#1C1C1C] bg-gray-50 focus:bg-white focus:outline-none"
+            >
+              <option value="Mumbai">Mumbai</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Bengaluru">Bengaluru</option>
+            </select>
+            <button
+              type="submit"
+              disabled={isSubmittingTest || !testPhone.trim()}
+              className="px-3.5 py-1.5 rounded-xl border-2 border-[#1C1C1C] bg-[#FFE600] hover:bg-[#fed900] shadow-[2px_2px_0px_#1C1C1C] text-xs font-black uppercase whitespace-nowrap active:scale-95 cursor-pointer disabled:opacity-50"
+            >
+              {isSubmittingTest ? "TESTING..." : "+ ADD TEST ENTRY"}
+            </button>
+          </form>
+        </div>
+
+        {testSuccessMsg && (
+          <div className="bg-[#CFFF04] border-2 border-[#1C1C1C] rounded-xl p-2.5 text-center text-xs font-black uppercase text-[#1C1C1C] shadow-[2px_2px_0px_#1C1C1C] flex items-center justify-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{testSuccessMsg}</span>
+          </div>
+        )}
 
         {/* Phase Controller Card */}
         <div className="bg-white p-6 rounded-3xl border-[3.5px] border-[#1C1C1C] shadow-[5px_5px_0px_#1C1C1C] flex flex-col gap-5">
@@ -885,6 +1004,84 @@ export default function AdminDashboardPage() {
           </a>
         </div>
       </div>
+
+      {/* Google Sheets & Cloud KV Setup Modal */}
+      {showIntegrationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-150 overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-white border-[3.5px] border-[#1C1C1C] rounded-3xl p-6 sm:p-7 shadow-[8px_8px_0px_#1C1C1C] flex flex-col gap-5 my-auto select-text">
+            <div className="flex items-center justify-between border-b-2 border-[#1C1C1C]/15 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">📊</span>
+                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-[#1C1C1C]">
+                  CONNECT GOOGLE SHEETS OR CLOUD KV
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowIntegrationModal(false)}
+                className="p-1.5 rounded-full bg-white border-2 border-[#1C1C1C] hover:bg-[#FF0040] hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Method 1: Google Sheets Webhook (Fastest for founders) */}
+            <div className="bg-[#F5F8FF] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-3 shadow-[2px_2px_0px_#1C1C1C]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-black uppercase text-[#5D00FF]">
+                  ★ OPTION 1: GOOGLE SHEETS LIVE SYNC (RECOMMENDED)
+                </span>
+                <button
+                  onClick={() => {
+                    const code = `function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    data.createdAt || new Date().toISOString(),
+    data.contact || data.experienceDescription || "",
+    data.suggestedCity || "Mumbai",
+    data.levelUnlocked ? "Level " + data.levelUnlocked : "All",
+    data.source || "web",
+    data.submittedBy || "Player"
+  ]);
+  return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+}`;
+                    navigator.clipboard.writeText(code);
+                    setCopiedScript(true);
+                    setTimeout(() => setCopiedScript(false), 3000);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-[#1C1C1C] text-[10px] font-mono font-black uppercase flex items-center gap-1 hover:bg-[#CFFF04] cursor-pointer"
+                >
+                  {copiedScript ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedScript ? "COPIED CODE!" : "COPY APPS SCRIPT"}</span>
+                </button>
+              </div>
+              <ol className="text-xs font-sans text-gray-800 space-y-1 list-decimal list-inside font-medium leading-relaxed">
+                <li>Open any Google Sheet and create columns: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">Timestamp, Contact, City, Level, Source, Submitter</code>.</li>
+                <li>Click <strong>Extensions &gt; Apps Script</strong>, paste the copied snippet, and click <strong>Deploy &gt; New deployment</strong>.</li>
+                <li>Select type <strong>Web app</strong>, set <em>Who has access</em> to <strong>Anyone</strong>, and copy the generated Web App URL.</li>
+                <li>In your hosting (Vercel) dashboard, add environment variable: <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">RSVP_WEBHOOK_URL=&lt;your_web_app_url&gt;</code>.</li>
+              </ol>
+            </div>
+
+            {/* Method 2: Vercel KV / Upstash Redis */}
+            <div className="bg-[#FFF8F0] border-2 border-[#1C1C1C] rounded-2xl p-4 flex flex-col gap-2 shadow-[2px_2px_0px_#1C1C1C]">
+              <span className="text-xs font-mono font-black uppercase text-[#FF0040]">
+                ★ OPTION 2: VERCEL KV / UPSTASH REDIS (1-CLICK)
+              </span>
+              <p className="text-xs font-sans text-gray-800 font-medium leading-relaxed">
+                In your Vercel Dashboard, go to <strong>Storage &gt; Create Database &gt; KV</strong> and click <strong>Connect to Project</strong>. Vercel automatically configures <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">KV_REST_API_URL</code> and <code className="font-mono bg-white px-1 border border-gray-300 rounded text-[11px]">KV_REST_API_TOKEN</code>. Our backend will automatically detect and sync with it!
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowIntegrationModal(false)}
+              className="w-full py-3 rounded-xl bg-[#CFFF04] text-[#1C1C1C] border-2 border-[#1C1C1C] font-black text-xs uppercase shadow-[3px_3px_0px_#1C1C1C] cursor-pointer hover:bg-[#bcf000] active:scale-98 transition-all"
+            >
+              GOT IT, CLOSE ✕
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

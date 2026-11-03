@@ -1,35 +1,6 @@
 import { NextResponse } from "next/server";
 import { PitchSubmission } from "@/types/hitmap";
-import fs from "fs";
-import path from "path";
-
-const DATA_FILE_PATH = path.join(process.cwd(), "src", "data", "fan_submissions.json");
-
-// Read existing submissions from disk
-function readSubmissions(): PitchSubmission[] {
-  try {
-    if (fs.existsSync(DATA_FILE_PATH)) {
-      const data = fs.readFileSync(DATA_FILE_PATH, "utf-8");
-      return JSON.parse(data);
-    }
-  } catch (err) {
-    console.warn("Could not read submissions from file, using fallback:", err);
-  }
-  return [];
-}
-
-// Write submissions to disk
-function writeSubmissions(items: PitchSubmission[]) {
-  try {
-    const dir = path.dirname(DATA_FILE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(DATA_FILE_PATH, JSON.stringify(items, null, 2), "utf-8");
-  } catch (err) {
-    console.warn("Could not write submissions to file:", err);
-  }
-}
+import { addSubmission, getSubmissions, getStorageDiagnostics } from "@/lib/storage/submissionsStore";
 
 export async function POST(request: Request) {
   try {
@@ -41,11 +12,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Contact (phone number or email) is required" }, { status: 400 });
     }
 
-    const currentSubmissions = readSubmissions();
-
     // Determine normalized source
     let normalizedSource = body.source || "bandhunt_web";
-    if (body.submittedBy === "Mumbai Offline Bandhunt Early Access" || normalizedSource.includes("offline")) {
+    if (
+      body.submittedBy === "Mumbai Offline Bandhunt Early Access" ||
+      body.submittedBy === "Mumbai Offline RSVP (offlyn.life)" ||
+      normalizedSource.includes("offline")
+    ) {
       normalizedSource = "mumbai_offline_registration";
     }
 
@@ -59,29 +32,14 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    currentSubmissions.push(newSubmission);
-    writeSubmissions(currentSubmissions);
-
-    // Optional webhook forwarder for founders (Google Sheets / Zapier / Airtable / Luma)
-    const webhookUrl = process.env.RSVP_WEBHOOK_URL;
-    if (webhookUrl) {
-      try {
-        fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newSubmission),
-        }).catch((err) => console.warn("Webhook forward failed:", err));
-      } catch (wErr) {
-        console.warn("Could not fire webhook:", wErr);
-      }
-    }
+    const updatedList = await addSubmission(newSubmission);
 
     return NextResponse.json(
       {
         success: true,
         message: "Registration recorded successfully! You're on the taest invite list.",
-        submissionCount: currentSubmissions.length,
-        storedLocation: "src/data/fan_submissions.json",
+        submissionCount: updatedList.length,
+        diagnostics: getStorageDiagnostics(),
       },
       {
         headers: {
@@ -96,12 +54,12 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  const items = readSubmissions();
+  const items = await getSubmissions();
   return NextResponse.json(
     {
-      totalPitches: items.length,
-      pitches: items,
-      storageFile: "src/data/fan_submissions.json",
+      submissions: items,
+      count: items.length,
+      diagnostics: getStorageDiagnostics(),
     },
     {
       headers: {
